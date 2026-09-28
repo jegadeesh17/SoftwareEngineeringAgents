@@ -40,7 +40,7 @@ def test_claude_agent_has_frontmatter_and_verbatim_body(tmp_path):
     assert text == (
         "---\n"
         "name: qa-tester\n"
-        'description: "Runs tests"\n'
+        'description: "Runs tests Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."\n'
         "tools: Read, Bash\n"
         "model: inherit\n"
         "---\n\n"
@@ -58,7 +58,7 @@ def test_antigravity_agent_lists_tools_and_is_a_subagent(tmp_path):
     assert text == (
         "---\n"
         "name: qa-tester\n"
-        'description: "Runs tests"\n'
+        'description: "Runs tests Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."\n'
         "tools:\n"
         "  - view_file\n"
         "  - run_command\n"
@@ -98,7 +98,7 @@ def test_description_with_quotes_and_colons_is_escaped(tmp_path):
     assert build_agents.main([], root=tmp_path) == 0
 
     text = (tmp_path / ".claude" / "agents" / "qa-tester.md").read_text(encoding="utf-8")
-    assert 'description: "Checks \\"edge\\" cases: all of them"\n' in text
+    assert 'description: "Checks \\"edge\\" cases: all of them Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."\n' in text
 
 
 def test_crlf_unicode_source_produces_lf_utf8_output(tmp_path):
@@ -266,3 +266,15 @@ def test_build_keeps_hand_written_agents_copied_from_generated_ones(tmp_path):
 
     assert claude_copy.exists()
     assert agy_copy.exists()
+
+
+def test_sub_agent_descriptions_are_scoped_to_the_orchestrator(tmp_path):
+    make_source(tmp_path, QA_TOML + ORCH_TOML, {"qa-tester": "# QA\n", "orchestrator": "# Lead\n"})
+
+    assert build_agents.main([], root=tmp_path) == 0
+
+    scoped = 'description: "Runs tests Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."\n'
+    assert scoped in (tmp_path / ".claude" / "agents" / "qa-tester.md").read_text(encoding="utf-8")
+    assert scoped in (tmp_path / ".agents" / "agents" / "qa-tester" / "agent.md").read_text(encoding="utf-8")
+    lead = (tmp_path / ".agents" / "agents" / "orchestrator" / "agent.md").read_text(encoding="utf-8")
+    assert 'description: "Leads the team"\n' in lead

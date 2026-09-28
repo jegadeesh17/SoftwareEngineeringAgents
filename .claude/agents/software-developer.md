@@ -1,6 +1,6 @@
 ---
 name: software-developer
-description: "Implements exactly one task from docs/TASKS.json, or fixes it using failure output or review findings."
+description: "Implements exactly one task from docs/TASKS.json, or fixes it using failure output or review findings. Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Write, Edit, Glob, Grep, Bash
 model: inherit
 ---

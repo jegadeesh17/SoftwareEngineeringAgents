@@ -1,6 +1,6 @@
 ---
 name: software-architect
-description: "Designs the stack, components, data models, interfaces and test command in docs/ARCHITECTURE.md and records decisions in docs/DECISIONS.md. Use after docs/SPEC.md exists."
+description: "Designs the stack, components, data models, interfaces and test command in docs/ARCHITECTURE.md and records decisions in docs/DECISIONS.md. Use after docs/SPEC.md exists. Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
 tools:
   - view_file
   - write_to_file

@@ -1,6 +1,6 @@
 ---
 name: adversarial-reviewer
-description: "Read-only reviewer that audits a finished milestone for edge cases, silent failures, contract drift and security issues, and returns APPROVED or REJECTED."
+description: "Read-only reviewer that audits a finished milestone for edge cases, silent failures, contract drift and security issues, and returns APPROVED or REJECTED. Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
 tools:
   - view_file
   - grep_search

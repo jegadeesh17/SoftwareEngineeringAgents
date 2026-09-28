@@ -1,6 +1,6 @@
 ---
 name: task-planner
-description: "Breaks the architecture into ordered, testable tasks across milestones M1, M2 and M3 in docs/TASKS.json. Use after docs/ARCHITECTURE.md exists."
+description: "Breaks the architecture into ordered, testable tasks across milestones M1, M2 and M3 in docs/TASKS.json. Use after docs/ARCHITECTURE.md exists. Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Write, Edit, Glob, Grep
 model: inherit
 ---
