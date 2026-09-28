@@ -278,3 +278,42 @@ def test_sub_agent_descriptions_are_scoped_to_the_orchestrator(tmp_path):
     assert scoped in (tmp_path / ".agents" / "agents" / "qa-tester" / "agent.md").read_text(encoding="utf-8")
     lead = (tmp_path / ".agents" / "agents" / "orchestrator" / "agent.md").read_text(encoding="utf-8")
     assert 'description: "Leads the team"\n' in lead
+
+
+def test_bom_in_manifest_and_prompt_is_ignored(tmp_path):
+    make_source(tmp_path, QA_TOML, {})
+    manifest = tmp_path / "agents" / "roles.toml"
+    manifest.write_bytes(b"\xef\xbb\xbf" + manifest.read_bytes())
+    (tmp_path / "agents" / "qa-tester.md").write_bytes(b"\xef\xbb\xbf# QA\n")
+
+    assert build_agents.main([], root=tmp_path) == 0
+
+    text = (tmp_path / ".claude" / "agents" / "qa-tester.md").read_text(encoding="utf-8")
+    assert text.endswith(QA_BANNER + "# QA\n")
+
+
+def test_non_utf8_hand_written_agent_is_left_alone(tmp_path):
+    make_source(tmp_path, QA_TOML, {"qa-tester": "# QA\n"})
+    build_agents.main([], root=tmp_path)
+    legacy = tmp_path / ".claude" / "agents" / "café-helper.md"
+    legacy.write_bytes("---\nname: cafe-helper\n---\n\nCafé notes\n".encode("cp1252"))
+
+    assert build_agents.main(["--check"], root=tmp_path) == 0
+    assert build_agents.main([], root=tmp_path) == 0
+
+    assert legacy.exists()
+
+
+def test_slash_command_is_removed_when_no_role_is_the_main_agent(tmp_path, capsys):
+    make_source(tmp_path, QA_TOML + ORCH_TOML, {"qa-tester": "# QA\n", "orchestrator": "# Lead\n"})
+    build_agents.main([], root=tmp_path)
+    (tmp_path / "agents" / "roles.toml").write_text(QA_TOML, encoding="utf-8")
+    (tmp_path / "agents" / "orchestrator.md").unlink()
+    capsys.readouterr()
+
+    assert build_agents.main(["--check"], root=tmp_path) == 1
+    assert "templates/claude/orchestrate.md" in capsys.readouterr().out
+    assert build_agents.main([], root=tmp_path) == 0
+
+    assert not (tmp_path / "templates" / "claude" / "orchestrate.md").exists()
+    assert not (tmp_path / ".agents" / "agents" / "orchestrator").exists()

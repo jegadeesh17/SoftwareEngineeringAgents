@@ -50,7 +50,8 @@ def load_roles(source_dir: Path) -> List[Role]:
     if not manifest_path.exists():
         raise ValueError("agents/roles.toml not found")
     try:
-        entries = tomllib.loads(manifest_path.read_text(encoding="utf-8")).get("roles", {})
+        # utf-8-sig: editors such as PowerShell 5.1 prepend a BOM that TOML would reject
+        entries = tomllib.loads(manifest_path.read_text(encoding="utf-8-sig")).get("roles", {})
     except tomllib.TOMLDecodeError as e:
         raise ValueError(f"agents/roles.toml is not valid TOML: {e}") from e
 
@@ -83,7 +84,7 @@ def load_roles(source_dir: Path) -> List[Role]:
         for key in ("claude_tools", "antigravity_tools"):
             if key in entry and not _is_string_list(entry[key]):
                 raise ValueError(f"role '{name}': '{key}' must be a non-empty list of strings")
-        body = normalize_newlines((source_dir / f"{name}.md").read_text(encoding="utf-8")).strip() + "\n"
+        body = normalize_newlines((source_dir / f"{name}.md").read_text(encoding="utf-8-sig")).strip() + "\n"
         roles.append(Role(
             name=name,
             description=entry["description"],
@@ -175,25 +176,36 @@ def find_orphans(outputs: Dict[Path, str], root: Path) -> List[Path]:
     A file only counts as generated when its banner names its own role, so a hand-written
     agent copied from a generated one (banner and all) is never treated as an orphan.
     """
-    candidates = []
+    orphans = []
     for base, pattern, role_of in (
         (CLAUDE_AGENTS_DIR, "*.md", lambda rel: rel.stem),
         (ANTIGRAVITY_AGENTS_DIR, "*/agent.md", lambda rel: rel.parent.name),
     ):
         if (root / base).exists():
-            candidates += [(p.relative_to(root), role_of) for p in (root / base).glob(pattern)]
-    return sorted(
-        rel for rel, role_of in candidates
-        if rel not in outputs
-        and f"{GENERATED_MARKER}{role_of(rel)}.md —" in (root / rel).read_text(encoding="utf-8")
-    )
+            for path in (root / base).glob(pattern):
+                rel = path.relative_to(root)
+                text = _read_text(path)
+                if rel not in outputs and text is not None and f"{GENERATED_MARKER}{role_of(rel)}.md —" in text:
+                    orphans.append(rel)
+    # The slash command belongs to whichever role is the main agent, so any generated banner counts
+    command = root / CLAUDE_COMMAND_PATH
+    if CLAUDE_COMMAND_PATH not in outputs and command.exists() and GENERATED_MARKER in (_read_text(command) or ""):
+        orphans.append(CLAUDE_COMMAND_PATH)
+    return sorted(orphans)
+
+
+def _read_text(path: Path) -> Optional[str]:
+    """File text with LF endings, or None if it is not UTF-8 (such files are never ours)."""
+    try:
+        return normalize_newlines(path.read_text(encoding="utf-8"))
+    except UnicodeDecodeError:
+        return None
 
 
 def find_stale(outputs: Dict[Path, str], root: Path) -> List[Path]:
     stale = [
         rel for rel, content in outputs.items()
-        if not (root / rel).exists()
-        or normalize_newlines((root / rel).read_text(encoding="utf-8")) != content
+        if not (root / rel).exists() or _read_text(root / rel) != content
     ]
     return sorted(stale + find_orphans(outputs, root))
 
