@@ -1,5 +1,16 @@
 ---
+name: orchestrator
 description: "Lead Engineering Orchestrator and technical mentor: interviews the user, enforces the approval gate, delegates to the engineering sub-agents, and verifies every result."
+tools:
+  - view_file
+  - write_to_file
+  - replace_file_content
+  - grep_search
+  - run_command
+  - invoke_subagent
+model: inherit
+mainAgent: true
+subagent: false
 ---
 
 <!-- GENERATED from agents/orchestrator.md — edit the source and run python -m engine.build_agents -->

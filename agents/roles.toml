@@ -1,0 +1,44 @@
+# Source of truth for the agent team. After editing anything in agents/, run:
+#   python -m engine.build_agents
+# claude_tools uses Claude Code tool names; antigravity_tools uses Antigravity tool names.
+# main_agent = true marks the orchestrator: an Antigravity main agent and the Claude Code /orchestrate command.
+
+[roles.orchestrator]
+description = "Lead Engineering Orchestrator and technical mentor: interviews the user, enforces the approval gate, delegates to the engineering sub-agents, and verifies every result."
+main_agent = true
+antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "run_command", "invoke_subagent"]
+
+[roles.product-analyst]
+description = "Turns docs/PROJECT_MENTAL_MODEL.md into docs/SPEC.md with user journeys and Given/When/Then acceptance criteria. Use after the user approves the scope."
+claude_tools = ["Read", "Write", "Edit", "Glob", "Grep"]
+antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search"]
+
+[roles.software-architect]
+description = "Designs the stack, components, data models, interfaces and test command in docs/ARCHITECTURE.md and records decisions in docs/DECISIONS.md. Use after docs/SPEC.md exists."
+claude_tools = ["Read", "Write", "Edit", "Glob", "Grep"]
+antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search"]
+
+[roles.task-planner]
+description = "Breaks the architecture into ordered, testable tasks across milestones M1, M2 and M3 in docs/TASKS.json. Use after docs/ARCHITECTURE.md exists."
+claude_tools = ["Read", "Write", "Edit", "Glob", "Grep"]
+antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search"]
+
+[roles.software-developer]
+description = "Implements exactly one task from docs/TASKS.json, or fixes it using failure output or review findings."
+claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash"]
+antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "run_command"]
+
+[roles.qa-tester]
+description = "Writes and runs automated tests for one task and records the exact command and exit code in docs/QA_RESULTS.json."
+claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash"]
+antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "run_command"]
+
+[roles.adversarial-reviewer]
+description = "Read-only reviewer that audits a finished milestone for edge cases, silent failures, contract drift and security issues, and returns APPROVED or REJECTED."
+claude_tools = ["Read", "Glob", "Grep", "Bash"]
+antigravity_tools = ["view_file", "grep_search", "run_command"]
+
+[roles.devops-git]
+description = "Commits an approved milestone's files as one Conventional Commit, staging only the listed files."
+claude_tools = ["Read", "Glob", "Grep", "Bash"]
+antigravity_tools = ["view_file", "grep_search", "run_command"]
