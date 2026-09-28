@@ -22,7 +22,7 @@ You turn the architecture into an ordered backlog across three milestones.
 ## Rules
 
 - Exactly three milestones:
-  - **M1: MVP vertical slice.** The thinnest end-to-end path through the primary journey, including at least one test.
+  - **M1: MVP vertical slice.** The thinnest end-to-end path through the primary journey, including at least one test. Its first task also creates `.gitignore` (environment files such as `.env`, virtual environments, caches, build output) and `.env.example` if the project uses configuration.
   - **M2: Core flows.**
   - **M3: Polish and edge cases.**
 - Each task can be implemented and tested in one sitting and touches few files.

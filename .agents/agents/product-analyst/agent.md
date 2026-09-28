@@ -6,6 +6,8 @@ tools:
   - write_to_file
   - replace_file_content
   - grep_search
+  - list_dir
+  - find_by_name
 model: inherit
 mainAgent: false
 subagent: true

@@ -4,6 +4,8 @@ description: "Commits an approved milestone's files as one Conventional Commit, 
 tools:
   - view_file
   - grep_search
+  - list_dir
+  - find_by_name
   - run_command
 model: inherit
 mainAgent: false

@@ -317,3 +317,11 @@ def test_slash_command_is_removed_when_no_role_is_the_main_agent(tmp_path, capsy
 
     assert not (tmp_path / "templates" / "claude" / "orchestrate.md").exists()
     assert not (tmp_path / ".agents" / "agents" / "orchestrator").exists()
+
+
+def test_antigravity_roles_can_discover_files_like_their_claude_counterparts():
+    roles = build_agents.load_roles(build_agents.REPO_ROOT / "agents")
+
+    for role in roles:
+        if role.main_agent or "Glob" in role.claude_tools:
+            assert {"list_dir", "find_by_name"} <= set(role.antigravity_tools), role.name
