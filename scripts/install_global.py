@@ -104,7 +104,11 @@ def main(argv: Optional[List[str]] = None, home: Optional[Path] = None, root: Op
     print("  SOFTWARE ENGINEERING AGENTS: GLOBAL INSTALLER")
     print("=" * 65)
 
-    if build_agents.main(["--check"], root=root) != 0:
+    check = build_agents.main(["--check"], root=root)
+    if check == 2:
+        print("\n[!] Nothing installed: agents/ has errors (shown above). Fix them, then run: python -m engine.build_agents")
+        return 2
+    if check != 0:
         print("\n[!] Nothing installed: generated agent files are out of date with agents/.")
         print("    Run: python -m engine.build_agents")
         return 1
@@ -124,6 +128,17 @@ def main(argv: Optional[List[str]] = None, home: Optional[Path] = None, root: Op
         print(f"\n{title}")
         for rel in sorted(r for r in installs if belongs(r)):
             results.append(install_text(installs[rel], user_home, rel, args.force, manifest))
+
+    # Files we installed earlier for roles that no longer exist: report them, never delete
+    rule_key = (Path(".gemini") / "config" / "rules" / RULE_SOURCE.name).as_posix()
+    removed = sorted(
+        key for key in manifest
+        if key != rule_key and Path(key) not in installs and (user_home / key).exists()
+    )
+    if removed:
+        print("\n      [i] Installed earlier but no longer part of the team (left in place; delete if unwanted):")
+        for key in removed:
+            print(f"          {Path(key)}")
 
     old_skill = user_home / ".gemini" / "config" / "skills" / "orchestrator"
     if old_skill.exists():

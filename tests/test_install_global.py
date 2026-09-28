@@ -1,4 +1,5 @@
 import importlib.util
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -159,3 +160,37 @@ def test_installer_replaces_the_old_installers_orchestrate_command(tmp_path, ins
     assert installer.main([], home=tmp_path) == 0
 
     assert _text(command) == _text(ROOT / "templates" / "claude" / "orchestrate.md")
+
+
+def test_installer_reports_invalid_source_instead_of_suggesting_a_rebuild(tmp_path, installer, capsys):
+    repo = _copy_repo(tmp_path / "repo")
+    (repo / "agents" / "roles.toml").write_text("[roles.broken\n", encoding="utf-8")
+    home = tmp_path / "home"
+
+    assert installer.main([], home=home, root=repo) == 2
+
+    out = capsys.readouterr()
+    assert "roles.toml is not valid TOML" in out.err
+    assert "out of date" not in out.out
+    assert not home.exists()
+
+
+def test_installer_notes_installed_roles_that_were_removed_from_the_team(tmp_path, installer, capsys):
+    repo = _copy_repo(tmp_path / "repo")
+    home = tmp_path / "home"
+    assert installer.main([], home=home, root=repo) == 0
+    manifest = repo / "agents" / "roles.toml"
+    manifest.write_text(
+        re.sub(r"\[roles\.devops-git\].*?(?=\n\[roles\.|\Z)", "", manifest.read_text(encoding="utf-8"), flags=re.S),
+        encoding="utf-8",
+    )
+    (repo / "agents" / "devops-git.md").unlink()
+    assert build_agents.main([], root=repo) == 0
+    capsys.readouterr()
+
+    assert installer.main([], home=home, root=repo) == 0
+
+    out = capsys.readouterr().out
+    assert "no longer part of the team" in out
+    assert str(Path(".claude") / "agents" / "devops-git.md") in out
+    assert (home / ".claude" / "agents" / "devops-git.md").exists()
