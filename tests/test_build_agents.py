@@ -218,3 +218,28 @@ def test_team_roster_and_permissions():
     # The reviewer must not be able to change the code it judges
     assert not {"Write", "Edit"} & set(roles["adversarial-reviewer"].claude_tools)
     assert not {"write_to_file", "replace_file_content"} & set(roles["adversarial-reviewer"].antigravity_tools)
+
+
+@pytest.mark.parametrize(
+    "toml_text, prompt_name, message",
+    [
+        (QA_TOML.replace('["Read", "Bash"]', '"Read, Bash"'), "qa-tester",
+         "role 'qa-tester': 'claude_tools' must be a non-empty list of strings"),
+        (QA_TOML.replace('["view_file", "run_command"]', "[]"), "qa-tester",
+         "role 'qa-tester': 'antigravity_tools' must be a non-empty list of strings"),
+        (QA_TOML.replace('"Runs tests"', "42"), "qa-tester",
+         "role 'qa-tester': 'description' must be a non-empty string"),
+        (ORCH_TOML.replace("main_agent = true", 'main_agent = "true"'), "orchestrator",
+         "role 'orchestrator': 'main_agent' must be true or false"),
+        (QA_TOML.replace("[roles.qa-tester]", '[roles."QA Tester"]'), "QA Tester",
+         "invalid role name 'QA Tester'"),
+    ],
+)
+def test_wrongly_typed_fields_are_rejected(tmp_path, capsys, toml_text, prompt_name, message):
+    make_source(tmp_path, toml_text, {prompt_name: "x"})
+
+    assert build_agents.main([], root=tmp_path) == 2
+
+    assert message in capsys.readouterr().err
+    assert not (tmp_path / ".claude").exists()
+    assert not (tmp_path / ".agents").exists()
