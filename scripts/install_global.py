@@ -1,98 +1,95 @@
 """
 Global Installer for SoftwareEngineeringAgents
-Installs:
-1. Global Terminal CLI: 'orchestrate' and 'se-agents' via pip
-2. Claude Code Global Slash Command: /orchestrate (in ~/.claude/commands/)
-3. Antigravity Global Skill: 'orchestrator' (in ~/.gemini/config/skills/)
-4. Antigravity Global Rule: 'nomenclature-standards.md' (in ~/.gemini/config/rules/), opt-in via --global-rules
+Installs the generated agent team so it works in any project folder:
+1. Claude Code sub-agents   -> ~/.claude/agents/<role>.md
+2. Claude Code /orchestrate -> ~/.claude/commands/orchestrate.md
+3. Antigravity agents       -> ~/.gemini/config/agents/<role>/agent.md
+4. Antigravity global rule 'nomenclature-standards.md' (opt-in via --global-rules)
 
-Existing files that differ from the templates are kept unless --force is passed.
+Existing files that differ from the generated ones are kept unless --force is passed.
+Nothing in your home directory is ever deleted.
 """
 
 import argparse
 import filecmp
-import sys
 import shutil
-import subprocess
+import sys
 from pathlib import Path
+from typing import List, Optional
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
+
+from engine import build_agents  # noqa: E402
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
+
 def install_file(src: Path, dst: Path, force: bool) -> bool:
     """Copy src to dst, refusing to clobber a customized dst unless force is set."""
     if dst.exists() and not force and not filecmp.cmp(src, dst, shallow=False):
-        print(f"      [!] Skipped: {dst} exists and differs from the template (re-run with --force to overwrite)")
+        print(f"      [!] Skipped: {dst} exists and differs from the generated file (re-run with --force to overwrite)")
         return False
     dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(src, dst)
-    print(f"      [OK] Installed to: {dst}")
+    print(f"      [OK] Installed: {dst}")
     return True
 
-def main(argv=None, home: Path = None):
-    parser = argparse.ArgumentParser(description="Install SoftwareEngineeringAgents globally")
-    parser.add_argument("--no-pip", action="store_true", help="skip 'pip install -e' of the CLI")
-    parser.add_argument("--force", action="store_true", help="overwrite existing files that differ from the templates")
+
+def main(argv: Optional[List[str]] = None, home: Optional[Path] = None, root: Optional[Path] = None) -> int:
+    parser = argparse.ArgumentParser(description="Install the SoftwareEngineeringAgents team globally")
+    parser.add_argument("--force", action="store_true", help="overwrite existing files that differ from the generated ones")
     parser.add_argument("--global-rules", action="store_true",
                         help="also install the always-on nomenclature rule for every Antigravity project")
     args = parser.parse_args(argv)
 
-    root_dir = Path(__file__).parent.parent
+    root = root or REPO_ROOT
     user_home = home or Path.home()
 
     print("=" * 65)
     print("  SOFTWARE ENGINEERING AGENTS: GLOBAL INSTALLER")
     print("=" * 65)
 
-    # 1. Install CLI command globally
-    print("\n[1/4] Installing global terminal CLI ('orchestrate' and 'se-agents')...")
-    if args.no_pip:
-        print("      [-] Skipped (--no-pip).")
-    else:
-        try:
-            subprocess.run([sys.executable, "-m", "pip", "install", "-e", str(root_dir)], check=True)
-            print("      [OK] Successfully registered 'orchestrate' command in Python PATH.")
-        except Exception as e:
-            print(f"      [!] Warning: pip install failed: {e}")
+    if build_agents.main(["--check"], root=root) != 0:
+        print("\n[!] Nothing installed: generated agent files are out of date with agents/.")
+        print("    Run: python -m engine.build_agents")
+        return 1
 
-    # 2. Install Claude Code slash command
-    print("\n[2/4] Installing Claude Code slash command (/orchestrate)...")
-    claude_src = root_dir / "templates" / "claude" / "orchestrate.md"
-    claude_dst = user_home / ".claude" / "commands" / "orchestrate.md"
-    if claude_src.exists():
-        if install_file(claude_src, claude_dst, args.force):
-            print("          Usage in Claude Code: Type '/orchestrate' in any folder!")
-    else:
-        print("      [!] Could not find templates/claude/orchestrate.md")
+    print("\n[1/4] Claude Code sub-agents...")
+    for src in sorted((root / ".claude" / "agents").glob("*.md")):
+        install_file(src, user_home / ".claude" / "agents" / src.name, args.force)
 
-    # 3. Install Antigravity Global Skill
-    print("\n[3/4] Installing Antigravity global skill ('orchestrator')...")
-    agy_skill_src = root_dir / "templates" / "antigravity" / "skills" / "orchestrator" / "SKILL.md"
-    agy_skill_dst = user_home / ".gemini" / "config" / "skills" / "orchestrator" / "SKILL.md"
-    if agy_skill_src.exists():
-        if install_file(agy_skill_src, agy_skill_dst, args.force):
-            print("          Usage in Antigravity: The 'orchestrator' skill is now active globally!")
+    print("\n[2/4] Claude Code /orchestrate command...")
+    install_file(root / "templates" / "claude" / "orchestrate.md",
+                 user_home / ".claude" / "commands" / "orchestrate.md", args.force)
 
-    # 4. Install Antigravity Global Rule for Nomenclature Standards
-    print("\n[4/4] Installing Antigravity global rule ('nomenclature-standards.md')...")
-    rule_src = root_dir / ".agents" / "rules" / "nomenclature-standards.md"
-    rule_dst = user_home / ".gemini" / "config" / "rules" / "nomenclature-standards.md"
+    print("\n[3/4] Antigravity agents...")
+    for src in sorted((root / ".agents" / "agents").glob("*/agent.md")):
+        install_file(src, user_home / ".gemini" / "config" / "agents" / src.parent.name / "agent.md", args.force)
+    old_skill = user_home / ".gemini" / "config" / "skills" / "orchestrator"
+    if old_skill.exists():
+        print(f"      [!] Found the old 'orchestrator' skill at {old_skill}.")
+        print("          The orchestrator agent replaces it; delete that folder to avoid two orchestrators.")
+
+    print("\n[4/4] Antigravity global naming rule...")
     if not args.global_rules:
-        print("      [-] Skipped: this rule is always-on for every project (re-run with --global-rules to install).")
-    elif rule_src.exists():
-        if install_file(rule_src, rule_dst, args.force):
-            print("          Nomenclature standards are now enforced across all projects!")
+        print("      [-] Not installed: this rule applies to every project (re-run with --global-rules to install).")
+    else:
+        install_file(root / ".agents" / "rules" / "nomenclature-standards.md",
+                     user_home / ".gemini" / "config" / "rules" / "nomenclature-standards.md", args.force)
 
     print("\n" + "=" * 65)
-    print("  INSTALLATION COMPLETE!")
+    print("  INSTALLATION COMPLETE")
     print("=" * 65)
-    print("You can now trigger your Software Engineering Agents anywhere:")
-    print("  1. In any Terminal:   run 'orchestrate'")
-    print("  2. In Claude Code:     type '/orchestrate'")
-    print("  3. In Antigravity CLI: run 'agy' (orchestrator skill auto-discovered)")
+    print("Start the team in any project folder:")
+    print("  Claude Code:  run 'claude', then type /orchestrate")
+    print("  Antigravity:  run 'agy --agent orchestrator'")
     print("=" * 65)
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
