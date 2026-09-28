@@ -6,16 +6,16 @@ Installs the generated agent team so it works in any project folder:
 3. Antigravity agents       -> ~/.gemini/config/agents/<role>/agent.md
 4. Antigravity global rule 'nomenclature-standards.md' (opt-in via --global-rules)
 
-Existing files that differ from the generated ones are kept unless --force is passed.
-Nothing in your home directory is ever deleted.
+Files this installer wrote before are updated. Files with your own changes are kept
+unless --force is passed. Nothing in your home directory is ever deleted.
 """
 
 import argparse
-import filecmp
-import shutil
+import hashlib
+import json
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
@@ -27,21 +27,72 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
+# Records what was installed, so a later run can tell our own files from the user's edits
+MANIFEST_PATH = Path(".se-agents") / "installed.json"
+# Content hashes (LF-normalized) of files written by earlier installer versions; safe to replace
+LEGACY_HASHES = {
+    ".claude/commands/orchestrate.md": {"95aa56d8ff3899f7c54a24cacc2e92791362e3269ee55e4b1143f2c3e6842baf"},
+}
+RULE_SOURCE = Path(".agents") / "rules" / "nomenclature-standards.md"
 
-def install_file(src: Path, dst: Path, force: bool) -> bool:
-    """Copy src to dst, refusing to clobber a customized dst unless force is set."""
-    if dst.exists() and not force and not filecmp.cmp(src, dst, shallow=False):
-        print(f"      [!] Skipped: {dst} exists and differs from the generated file (re-run with --force to overwrite)")
-        return False
+
+def _sha256(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _read_normalized(path: Path) -> Optional[str]:
+    try:
+        return build_agents.normalize_newlines(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError):
+        return None
+
+
+def _load_manifest(home: Path) -> Dict[str, str]:
+    try:
+        return json.loads((home / MANIFEST_PATH).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def _save_manifest(home: Path, manifest: Dict[str, str]) -> None:
+    path = home / MANIFEST_PATH
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
+
+
+def install_text(content: str, home: Path, rel: Path, force: bool, manifest: Dict[str, str]) -> bool:
+    """Write content to home/rel with LF endings, unless the existing file holds the user's own changes."""
+    dst = home / rel
+    key = rel.as_posix()
+    if dst.exists() and not force:
+        current = _read_normalized(dst)
+        ours = current is not None and (
+            current == content
+            or _sha256(current) == manifest.get(key)
+            or _sha256(current) in LEGACY_HASHES.get(key, set())
+        )
+        if not ours:
+            print(f"      [!] Skipped: {dst} has your own changes (re-run with --force to overwrite)")
+            return False
     dst.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(src, dst)
+    dst.write_text(content, encoding="utf-8", newline="\n")
+    manifest[key] = _sha256(content)
     print(f"      [OK] Installed: {dst}")
     return True
 
 
+def _home_path(generated: Path) -> Path:
+    """Where a generated repo file is installed, relative to the home directory."""
+    if generated == build_agents.CLAUDE_COMMAND_PATH:
+        return Path(".claude") / "commands" / "orchestrate.md"
+    if generated.parent == build_agents.CLAUDE_AGENTS_DIR:
+        return Path(".claude") / "agents" / generated.name
+    return Path(".gemini") / "config" / "agents" / generated.parent.name / "agent.md"
+
+
 def main(argv: Optional[List[str]] = None, home: Optional[Path] = None, root: Optional[Path] = None) -> int:
     parser = argparse.ArgumentParser(description="Install the SoftwareEngineeringAgents team globally")
-    parser.add_argument("--force", action="store_true", help="overwrite existing files that differ from the generated ones")
+    parser.add_argument("--force", action="store_true", help="overwrite files that have your own changes")
     parser.add_argument("--global-rules", action="store_true",
                         help="also install the always-on nomenclature rule for every Antigravity project")
     args = parser.parse_args(argv)
@@ -58,17 +109,22 @@ def main(argv: Optional[List[str]] = None, home: Optional[Path] = None, root: Op
         print("    Run: python -m engine.build_agents")
         return 1
 
-    print("\n[1/4] Claude Code sub-agents...")
-    for src in sorted((root / ".claude" / "agents").glob("*.md")):
-        install_file(src, user_home / ".claude" / "agents" / src.name, args.force)
+    # Install from the generator's output, not the checkout's bytes, so files are always LF
+    outputs = build_agents.build_outputs(build_agents.load_roles(root / build_agents.SOURCE_DIR))
+    installs = {_home_path(rel): content for rel, content in outputs.items()}
+    manifest = _load_manifest(user_home)
+    results = []
 
-    print("\n[2/4] Claude Code /orchestrate command...")
-    install_file(root / "templates" / "claude" / "orchestrate.md",
-                 user_home / ".claude" / "commands" / "orchestrate.md", args.force)
+    sections = [
+        ("[1/4] Claude Code sub-agents...", lambda rel: rel.parent == Path(".claude") / "agents"),
+        ("[2/4] Claude Code /orchestrate command...", lambda rel: rel.parent == Path(".claude") / "commands"),
+        ("[3/4] Antigravity agents...", lambda rel: rel.parts[:3] == (".gemini", "config", "agents")),
+    ]
+    for title, belongs in sections:
+        print(f"\n{title}")
+        for rel in sorted(r for r in installs if belongs(r)):
+            results.append(install_text(installs[rel], user_home, rel, args.force, manifest))
 
-    print("\n[3/4] Antigravity agents...")
-    for src in sorted((root / ".agents" / "agents").glob("*/agent.md")):
-        install_file(src, user_home / ".gemini" / "config" / "agents" / src.parent.name / "agent.md", args.force)
     old_skill = user_home / ".gemini" / "config" / "skills" / "orchestrator"
     if old_skill.exists():
         print(f"      [!] Found the old 'orchestrator' skill at {old_skill}.")
@@ -78,10 +134,19 @@ def main(argv: Optional[List[str]] = None, home: Optional[Path] = None, root: Op
     if not args.global_rules:
         print("      [-] Not installed: this rule applies to every project (re-run with --global-rules to install).")
     else:
-        install_file(root / ".agents" / "rules" / "nomenclature-standards.md",
-                     user_home / ".gemini" / "config" / "rules" / "nomenclature-standards.md", args.force)
+        rule = build_agents.normalize_newlines((root / RULE_SOURCE).read_text(encoding="utf-8"))
+        results.append(install_text(rule, user_home, Path(".gemini") / "config" / "rules" / RULE_SOURCE.name,
+                                    args.force, manifest))
 
+    _save_manifest(user_home, manifest)
+
+    skipped = results.count(False)
     print("\n" + "=" * 65)
+    if skipped:
+        print(f"  INSTALLATION INCOMPLETE: {skipped} file(s) skipped because they have your own changes.")
+        print("  Re-run with --force to overwrite them.")
+        print("=" * 65)
+        return 1
     print("  INSTALLATION COMPLETE")
     print("=" * 65)
     print("Start the team in any project folder:")
