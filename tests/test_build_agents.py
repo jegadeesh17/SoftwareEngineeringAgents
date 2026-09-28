@@ -243,3 +243,26 @@ def test_wrongly_typed_fields_are_rejected(tmp_path, capsys, toml_text, prompt_n
     assert message in capsys.readouterr().err
     assert not (tmp_path / ".claude").exists()
     assert not (tmp_path / ".agents").exists()
+
+
+def test_build_keeps_hand_written_agents_copied_from_generated_ones(tmp_path):
+    make_source(tmp_path, QA_TOML, {"qa-tester": "# QA\n"})
+    build_agents.main([], root=tmp_path)
+    claude_copy = tmp_path / ".claude" / "agents" / "my-strict-qa.md"
+    claude_copy.write_text(
+        (tmp_path / ".claude" / "agents" / "qa-tester.md").read_text(encoding="utf-8")
+        .replace("name: qa-tester", "name: my-strict-qa"),
+        encoding="utf-8",
+    )
+    agy_copy = tmp_path / ".agents" / "agents" / "my-strict-qa" / "agent.md"
+    agy_copy.parent.mkdir()
+    agy_copy.write_text(
+        (tmp_path / ".agents" / "agents" / "qa-tester" / "agent.md").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+
+    assert build_agents.main(["--check"], root=tmp_path) == 0
+    assert build_agents.main([], root=tmp_path) == 0
+
+    assert claude_copy.exists()
+    assert agy_copy.exists()
