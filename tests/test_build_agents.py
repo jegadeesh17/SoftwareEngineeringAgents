@@ -197,3 +197,24 @@ def test_build_removes_stale_generated_agents_but_keeps_hand_written(tmp_path):
     assert not stale_agy.parent.exists()
     assert hand_written.exists()
     assert build_agents.main(["--check"], root=tmp_path) == 0
+
+
+def test_committed_generated_files_match_source(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)  # the default root must be the repo, not the current directory
+
+    assert build_agents.main(["--check"]) == 0
+
+
+def test_team_roster_and_permissions():
+    roles = {r.name: r for r in build_agents.load_roles(build_agents.REPO_ROOT / "agents")}
+
+    assert set(roles) == {
+        "orchestrator", "product-analyst", "software-architect", "task-planner",
+        "software-developer", "qa-tester", "adversarial-reviewer", "devops-git",
+    }
+    assert [n for n, r in roles.items() if r.main_agent] == ["orchestrator"]
+    # Without invoke_subagent the Antigravity orchestrator cannot delegate at all
+    assert "invoke_subagent" in roles["orchestrator"].antigravity_tools
+    # The reviewer must not be able to change the code it judges
+    assert not {"Write", "Edit"} & set(roles["adversarial-reviewer"].claude_tools)
+    assert not {"write_to_file", "replace_file_content"} & set(roles["adversarial-reviewer"].antigravity_tools)
