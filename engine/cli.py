@@ -76,24 +76,34 @@ def main():
     print("\n[✓] Scope APPROVED by user! Engineering department dispatched.\n")
 
     # Step 3: Product Analyst Agent
-    print("[1/4] Product Analyst Agent: Synthesizing user stories into docs/PRD.md...")
+    print("\n[1/4] Product Analyst Agent: Synthesizing user stories into docs/PRD.md...")
     engine.generate_prd()
     print("      [✓] Generated docs/PRD.md")
+    print("      [💡 Learning Takeaway]: In MNCs, the PRD turns vague ideas into testable 'Given/When/Then'")
+    print("                             acceptance criteria so the team has an unambiguous target.")
 
     # Step 4: Software Architect Agent
-    print("[2/4] Software Architect Agent: Designing architecture, schemas & contracts...")
+    print("\n[2/4] Software Architect Agent: Designing architecture, schemas & contracts...")
     engine.generate_architecture()
     print("      [✓] Generated docs/ARCHITECTURE.md")
+    print("      [💡 Learning Takeaway]: Architecture comes before code. Defining interfaces and schemas")
+    print("                             prevents 'spaghetti code' and allows teams to work in parallel.")
 
     # Step 5: Task Planner Agent
-    print("[3/4] Task Planner Agent: Decomposing architecture into execution backlog...")
+    print("\n[3/4] Task Planner Agent: Decomposing architecture into execution backlog...")
     tasks = engine.plan_tasks()
     print(f"      [✓] Generated docs/TASKS.json ({len(tasks)} tasks queued)")
+    print("      [💡 Learning Takeaway]: Work is structured as a Directed Acyclic Graph (DAG), ensuring")
+    print("                             foundational data models exist before services try to use them.")
 
     # Step 6: Evaluator-Optimizer Execution Loop (Developer <-> QA Tester)
     print("\n" + "-" * 60)
     print("  STAGE 3: IMPLEMENTATION & EVALUATOR-OPTIMIZER TEST VERIFICATION")
     print("-" * 60)
+    print("  [💡 Learning Takeaway]: We use Anthropic's Evaluator-Optimizer pattern.")
+    print("                         The Developer implements, and the QA Tester runs real terminal tests.")
+    print("                         Code is only accepted when exit code is 0 (real verification).")
+
     for task in engine.state.tasks:
         print(f"\n-> Processing [{task.id}]: {task.title}")
         print(f"   [Dev Agent] Implementing required files: {', '.join(task.files_to_create)}")
@@ -111,14 +121,15 @@ def main():
 
     # Step 7: Delivery Handover
     print("\n" + "=" * 60)
-    print("  PROJECT DELIVERY HANDOVER")
+    print("  PROJECT DELIVERY & ENGINEERING REFLECTION")
     print("=" * 60)
     print("All tasks have been implemented and verified by the automated QA gatekeeper.")
-    print("Project artifacts available in:")
-    print("  - docs/PRD.md")
-    print("  - docs/ARCHITECTURE.md")
-    print("  - docs/TASKS.json")
-    print("\nThank you for working with the Software Engineering Agents team!")
+    print("\nWhat you have built and learned:")
+    print("  1. Requirements: Clear user stories & acceptance tests (docs/PRD.md)")
+    print("  2. System Design: Separation of concerns & contracts (docs/ARCHITECTURE.md)")
+    print("  3. Task Decomposition: Dependency-ordered backlog (docs/TASKS.json)")
+    print("  4. Verified Code: Evaluator-Optimizer loop executed with terminal proof")
+    print("\nThank you for collaborating with the Software Engineering Agents team!")
 
 if __name__ == "__main__":
     main()
