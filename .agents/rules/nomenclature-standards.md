@@ -1,7 +1,6 @@
 ---
-description: Universal industry-standard naming and nomenclature conventions for all projects
-globs: ["*"]
-always_on: true
+trigger: always_on
+description: "Universal industry-standard naming and nomenclature conventions for all projects"
 ---
 
 # Universal Naming & Nomenclature Standards
