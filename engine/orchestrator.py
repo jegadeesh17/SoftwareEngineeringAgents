@@ -1,7 +1,7 @@
 """
 Orchestrator Engine with PSB (Plan · Setup · Build) Workflow Automation
 Coordinates the multi-agent team across the project lifecycle with living documentation,
-adversarial quality reviews, and automated progress tracking.
+adversarial quality reviews, automated progress tracking, Git discipline, and observability.
 """
 
 import json
@@ -11,6 +11,7 @@ from engine.config import ConfigManager
 from engine.state import ProjectState, Stage, TaskItem, Milestone
 from engine.tools.workspace import WorkspaceTool
 from engine.tools.terminal import TerminalTool
+from engine.observability import ObservabilityLayer
 
 CHECKLIST_ITEMS = [
     ("phase_0_scoping", "Phase 0: Pre-Flight Scoping (Goal classification & 3-Milestone definition)"),
@@ -32,6 +33,7 @@ class OrchestratorEngine:
         self.terminal = TerminalTool(workspace_dir)
         self.config_mgr = ConfigManager()
         self.state = ProjectState()
+        self.telemetry = ObservabilityLayer()
         self._init_checklist()
 
     def _init_checklist(self):
@@ -61,6 +63,9 @@ class OrchestratorEngine:
 
     def pre_flight_scoping(self, user_idea: str, goal_posture: str = "Prototype", persona: str = "General User") -> str:
         """Phase 0: Pre-Flight Scoping per MASTER_WORKFLOW_RUNBOOK.md."""
+        span = self.telemetry.start_span("orchestrator", "PRE_FLIGHT_SCOPING", "pre_flight_scoping")
+        span.record_input({"user_idea": user_idea, "posture": goal_posture, "persona": persona})
+
         self.state.user_idea = user_idea
         self.state.goal_posture = goal_posture
         self.state.target_persona = persona
@@ -93,10 +98,14 @@ class OrchestratorEngine:
             f"2. Edge Cases & Errors: What should happen when invalid inputs are provided?\n"
             f"3. Non-Goals: What features are strictly OUT of scope for Milestone 1 (MVP)?"
         )
+        self.telemetry.end_span(span, interview_prompt)
         return interview_prompt
 
     def record_spec_interview(self, answers_text: str) -> str:
         """Phase 1.1: Record UX answers into mental model and propose scope."""
+        span = self.telemetry.start_span("product_analyst", "SPEC_INTERVIEW", "record_spec_interview")
+        span.record_input(answers_text)
+
         self.state.clarifications.append({"answers": answers_text})
         self.state.stage = Stage.APPROVAL_GATE
 
@@ -128,18 +137,24 @@ class OrchestratorEngine:
             f"APPROVAL REQUIRED: Do you authorize the team to proceed with consolidation and build? (yes/no)"
         )
         self.state.approved_scope = proposal
+        self.telemetry.end_span(span, proposal)
         return proposal
 
     def approve_scope(self, approved: bool) -> bool:
+        span = self.telemetry.start_span("orchestrator", "APPROVAL_GATE", "approve_scope")
+        span.record_input({"approved": approved})
         if approved:
             self.state.stage = Stage.SPEC_CONSOLIDATION
+            self.telemetry.end_span(span, {"verdict": "APPROVED"})
             return True
         else:
             self.state.stage = Stage.SPEC_INTERVIEW
+            self.telemetry.end_span(span, {"verdict": "REJECTED"})
             return False
 
     def consolidate_spec(self) -> str:
         """Phase 1.2: Product Analyst generates docs/SPEC.md."""
+        span = self.telemetry.start_span("product_analyst", "SPEC_CONSOLIDATION", "consolidate_spec")
         content = (
             f"# Project Specification Document (SPEC)\n\n"
             f"> Authoritative specification derived from living mental model.\n\n"
@@ -162,10 +177,12 @@ class OrchestratorEngine:
         self.state.status_checklist["phase_1_spec"] = True
         self.state.stage = Stage.ARCHITECTURE_DECISIONS
         self.sync_status_markdown()
+        self.telemetry.end_span(span, content)
         return content
 
     def design_architecture(self) -> str:
         """Phase 2: Software Architect generates ARCHITECTURE.md and DECISIONS.md."""
+        span = self.telemetry.start_span("software_architect", "ARCHITECTURE_DECISIONS", "design_architecture")
         arch_content = (
             f"# Technical Architecture Document\n\n"
             f"## 1. System Overview\n"
@@ -197,10 +214,12 @@ class OrchestratorEngine:
         self.state.status_checklist["phase_2_decisions"] = True
         self.state.stage = Stage.MILESTONE_PLANNING
         self.sync_status_markdown()
+        self.telemetry.end_span(span, arch_content)
         return arch_content
 
     def plan_milestones(self) -> List[Milestone]:
         """Phase 3.1: Task Planner groups work into 3 Milestones."""
+        span = self.telemetry.start_span("task_planner", "MILESTONE_PLANNING", "plan_milestones")
         m1 = Milestone(
             id="M1",
             name="MVP Vertical Slice",
@@ -276,10 +295,14 @@ class OrchestratorEngine:
         self.state.status_checklist["phase_3_planning"] = True
         self.state.stage = Stage.MILESTONE_EXECUTION
         self.sync_status_markdown()
+        self.telemetry.end_span(span, tasks_export)
         return self.state.milestones
 
     def execute_task_loop(self, task: TaskItem, test_command: str) -> dict:
         """5-Step Build Discipline: Explore -> Plan -> Implement -> Verify."""
+        span = self.telemetry.start_span("software_developer", "BUILD_AND_VERIFY", f"execute_{task.id}")
+        span.record_input({"task_id": task.id, "title": task.title, "test_cmd": test_command})
+
         task.attempts += 1
         test_result = self.terminal.run_command(test_command)
 
@@ -288,14 +311,19 @@ class OrchestratorEngine:
             task.test_logs = test_result.stdout
             if task.id not in self.state.completed_tasks:
                 self.state.completed_tasks.append(task.id)
+            output = {"success": True, "result": test_result.stdout}
+            self.telemetry.end_span(span, output, status="OK")
             return {"success": True, "result": test_result}
         else:
             task.status = "failed"
             task.test_logs = f"STDOUT:\n{test_result.stdout}\nSTDERR:\n{test_result.stderr}"
+            output = {"success": False, "error": test_result.stderr}
+            self.telemetry.end_span(span, output, status="ERROR")
             return {"success": False, "result": test_result}
 
     def run_adversarial_review(self) -> str:
         """Phase 3.5: Adversarial Reviewer stress-tests the code for edge cases and security."""
+        span = self.telemetry.start_span("adversarial_reviewer", "ADVERSARIAL_REVIEW", "run_adversarial_review")
         self.state.stage = Stage.ADVERSARIAL_REVIEW
         report = (
             f"# Adversarial Quality Review Gate\n\n"
@@ -313,10 +341,28 @@ class OrchestratorEngine:
         self.state.adversarial_verdict = "APPROVED"
         self.state.status_checklist["phase_3_adversarial"] = True
         self.sync_status_markdown()
+        self.telemetry.end_span(span, report)
         return report
+
+    def commit_milestone(self, commit_type: str, scope: str, message: str, files_to_stage: Optional[List[str]] = None) -> bool:
+        """DevOps & Git Discipline: Atomic Conventional Commit recording milestone progress."""
+        span = self.telemetry.start_span("devops_git", "GIT_COMMIT", f"{commit_type}({scope})")
+        files_arg = " ".join(files_to_stage) if files_to_stage else "."
+        stage_cmd = f"git add {files_arg}"
+        self.terminal.run_command(stage_cmd)
+
+        commit_msg = f"{commit_type}({scope}): {message}"
+        commit_cmd = f'git commit -m "{commit_msg}"'
+        res = self.terminal.run_command(commit_cmd)
+
+        output = {"commit_msg": commit_msg, "exit_code": res.exit_code, "passed": res.passed}
+        span.record_output(output, status="OK" if res.passed else "ERROR")
+        self.telemetry.end_span(span)
+        return res.passed
 
     def final_polish(self) -> str:
         """Phase 4: Final Polish & Retrospective Handover."""
+        span = self.telemetry.start_span("orchestrator", "FINAL_POLISH", "final_polish")
         self.state.stage = Stage.FINAL_POLISH
         self.state.status_checklist["phase_4_polish"] = True
         self.sync_status_markdown()
@@ -334,4 +380,5 @@ class OrchestratorEngine:
             f"  - docs/PROJECT_STATUS.md (All 11 verification steps checked off)\n"
             f"===========================================================\n"
         )
+        self.telemetry.end_span(span, summary)
         return summary
