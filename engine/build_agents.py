@@ -164,14 +164,22 @@ def write_outputs(outputs: Dict[Path, str], root: Path) -> None:
 
 
 def find_orphans(outputs: Dict[Path, str], root: Path) -> List[Path]:
-    """Generated files on disk that no longer correspond to a role. Hand-written files are never orphans."""
+    """Generated files on disk that no longer correspond to a role.
+
+    A file only counts as generated when its banner names its own role, so a hand-written
+    agent copied from a generated one (banner and all) is never treated as an orphan.
+    """
     candidates = []
-    for base, pattern in ((CLAUDE_AGENTS_DIR, "*.md"), (ANTIGRAVITY_AGENTS_DIR, "*/agent.md")):
+    for base, pattern, role_of in (
+        (CLAUDE_AGENTS_DIR, "*.md", lambda rel: rel.stem),
+        (ANTIGRAVITY_AGENTS_DIR, "*/agent.md", lambda rel: rel.parent.name),
+    ):
         if (root / base).exists():
-            candidates += [p.relative_to(root) for p in (root / base).glob(pattern)]
+            candidates += [(p.relative_to(root), role_of) for p in (root / base).glob(pattern)]
     return sorted(
-        rel for rel in candidates
-        if rel not in outputs and GENERATED_MARKER in (root / rel).read_text(encoding="utf-8")
+        rel for rel, role_of in candidates
+        if rel not in outputs
+        and f"{GENERATED_MARKER}{role_of(rel)}.md —" in (root / rel).read_text(encoding="utf-8")
     )
 
 
