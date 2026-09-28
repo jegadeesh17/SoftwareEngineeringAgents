@@ -25,5 +25,5 @@ Requires Python 3.11+. Dev dependencies: `pip install -e ".[dev]"`.
 ## Tool names
 
 - `claude_tools` use Claude Code names: `Read`, `Write`, `Edit`, `Glob`, `Grep`, `Bash`.
-- `antigravity_tools` use Antigravity names: `view_file`, `write_to_file`, `replace_file_content`, `grep_search`, `run_command`, `invoke_subagent`.
+- `antigravity_tools` use Antigravity names: `view_file`, `write_to_file`, `replace_file_content`, `grep_search`, `list_dir`, `find_by_name`, `run_command`, `invoke_subagent`.
 - The orchestrator (`main_agent = true`) has no Claude tool list: in Claude Code it runs as the main session via `/orchestrate`.

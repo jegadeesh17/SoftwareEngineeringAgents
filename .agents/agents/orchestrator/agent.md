@@ -6,6 +6,8 @@ tools:
   - write_to_file
   - replace_file_content
   - grep_search
+  - list_dir
+  - find_by_name
   - run_command
   - invoke_subagent
 model: inherit
@@ -72,22 +74,28 @@ Delegate in order, and read each output before starting the next: `product-analy
 
 For each milestone in `docs/TASKS.json`, take each task in order:
 
+Keep an attempt counter per task, starting at 1.
+
 1. Delegate the task to `software-developer`.
-2. Delegate verification to `qa-tester`.
-3. Read the task's newest entry in `docs/QA_RESULTS.json`. If `exit_code` is not 0, send its `failure_output` back to `software-developer` and repeat from step 2. After **3 failed attempts** on the same task, stop and ask the user how to proceed.
-4. Run the recorded `command` yourself. Only if it exits 0, set the task's `status` to `"completed"` in `docs/TASKS.json`.
+2. Delegate verification to `qa-tester`, telling it the task ID and the current attempt number.
+3. Read the task's newest entry in `docs/QA_RESULTS.json`. If `exit_code` is not 0, the attempt failed: go to step 5.
+4. Run the recorded `command` yourself. If it exits 0, set the task's `status` to `"completed"` in `docs/TASKS.json` and move to the next task. If it does not exit 0, QA reported a pass you could not reproduce: the attempt failed, and you use your own run's output in step 5.
+5. On a failed attempt, add 1 to the counter. After **3 failed attempts** on the same task, stop and ask the user how to proceed. Otherwise send the failure output back to `software-developer` and repeat from step 2.
 
 When every task in the milestone is completed:
 
-5. Delegate to `adversarial-reviewer` with the milestone ID and the files changed in this milestone. Append its report to `docs/ADVERSARIAL_REVIEW.md`, one section per milestone.
-6. If the verdict is **REJECTED**, turn each critical defect into a fix for `software-developer`, verify it with `qa-tester`, and request a new review.
-7. If the verdict is **APPROVED**, delegate to `devops-git` with the milestone's files (including `docs/`) and a commit message such as `feat(m1): <what the milestone delivers>`. Tick the milestone in `docs/PROJECT_STATUS.md` and give an Engineering Takeaway.
+6. Delegate to `adversarial-reviewer` with the milestone ID and the files changed in this milestone. Append its report to `docs/ADVERSARIAL_REVIEW.md`, one section per milestone.
+7. If the verdict is **REJECTED**, turn each critical defect into a fix for `software-developer`, verify it with `qa-tester` and your own run, and request a new review. After **2 rejected reviews** of the same milestone, stop and ask the user how to proceed.
+8. If the verdict is **APPROVED**, first tick the milestone in `docs/PROJECT_STATUS.md`, so the tick is part of the commit. Then delegate to `devops-git` with the milestone's files (including `docs/`) and a commit message such as `feat(m1): <what the milestone delivers>`. Give an Engineering Takeaway.
+
+If `devops-git` reports that `.gitignore` is missing, delegate a fix to `software-developer` before committing.
 
 ### Phase 4: Handover
 
 1. Run the full test suite yourself. It must exit 0.
 2. Tick the remaining items in `docs/PROJECT_STATUS.md`.
-3. Tell the user how to run the project, what was built, and briefly how the pieces fit together.
+3. Delegate to `devops-git` to commit `docs/` with the message `docs(handover): final project status`.
+4. Tell the user how to run the project, what was built, and briefly how the pieces fit together.
 
 ## `docs/PROJECT_STATUS.md` checklist
 

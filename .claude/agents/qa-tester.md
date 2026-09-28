@@ -34,7 +34,7 @@ You prove, by running real commands, whether one task works.
 {"task_id": "M1-TASK-01", "attempt": 1, "command": "python -m pytest -q", "exit_code": 0, "summary": "5 passed", "failure_output": ""}
 ```
 
-`failure_output` holds the last 50 or so lines of output when `exit_code` is not 0.
+`attempt` is the attempt number from your delegation message. `failure_output` holds the last 50 or so lines of output when `exit_code` is not 0.
 
 ## Rules
 
