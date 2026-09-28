@@ -1,0 +1,146 @@
+import pytest
+
+from engine import build_agents
+
+QA_TOML = """
+[roles.qa-tester]
+description = "Runs tests"
+claude_tools = ["Read", "Bash"]
+antigravity_tools = ["view_file", "run_command"]
+"""
+
+ORCH_TOML = """
+[roles.orchestrator]
+description = "Leads the team"
+main_agent = true
+antigravity_tools = ["view_file", "invoke_subagent"]
+"""
+
+QA_BANNER = (
+    "<!-- GENERATED from agents/qa-tester.md — edit the source and run "
+    "python -m engine.build_agents -->\n\n"
+)
+
+
+def make_source(root, toml_text, prompts):
+    src = root / "agents"
+    src.mkdir()
+    (src / "roles.toml").write_text(toml_text, encoding="utf-8")
+    for name, body in prompts.items():
+        (src / f"{name}.md").write_text(body, encoding="utf-8")
+    return root
+
+
+def test_claude_agent_has_frontmatter_and_verbatim_body(tmp_path):
+    make_source(tmp_path, QA_TOML, {"qa-tester": "# QA\n\nRun the tests.\n"})
+
+    assert build_agents.main([], root=tmp_path) == 0
+
+    text = (tmp_path / ".claude" / "agents" / "qa-tester.md").read_text(encoding="utf-8")
+    assert text == (
+        "---\n"
+        "name: qa-tester\n"
+        'description: "Runs tests"\n'
+        "tools: Read, Bash\n"
+        "model: inherit\n"
+        "---\n\n"
+        + QA_BANNER
+        + "# QA\n\nRun the tests.\n"
+    )
+
+
+def test_antigravity_agent_lists_tools_and_is_a_subagent(tmp_path):
+    make_source(tmp_path, QA_TOML, {"qa-tester": "# QA\n\nRun the tests.\n"})
+
+    assert build_agents.main([], root=tmp_path) == 0
+
+    text = (tmp_path / ".agents" / "agents" / "qa-tester" / "agent.md").read_text(encoding="utf-8")
+    assert text == (
+        "---\n"
+        "name: qa-tester\n"
+        'description: "Runs tests"\n'
+        "tools:\n"
+        "  - view_file\n"
+        "  - run_command\n"
+        "model: inherit\n"
+        "mainAgent: false\n"
+        "subagent: true\n"
+        "---\n\n"
+        + QA_BANNER
+        + "# QA\n\nRun the tests.\n"
+    )
+
+
+def test_orchestrator_is_antigravity_main_agent_and_claude_slash_command(tmp_path):
+    make_source(tmp_path, ORCH_TOML, {"orchestrator": "# Lead\n"})
+
+    assert build_agents.main([], root=tmp_path) == 0
+
+    agy = (tmp_path / ".agents" / "agents" / "orchestrator" / "agent.md").read_text(encoding="utf-8")
+    assert "mainAgent: true\nsubagent: false\n" in agy
+    assert "  - invoke_subagent\n" in agy
+    command = (tmp_path / "templates" / "claude" / "orchestrate.md").read_text(encoding="utf-8")
+    assert command == (
+        "---\n"
+        'description: "Leads the team"\n'
+        "---\n\n"
+        "<!-- GENERATED from agents/orchestrator.md — edit the source and run "
+        "python -m engine.build_agents -->\n\n"
+        "# Lead\n"
+    )
+    assert not (tmp_path / ".claude" / "agents").exists()
+
+
+def test_description_with_quotes_and_colons_is_escaped(tmp_path):
+    toml_text = QA_TOML.replace('"Runs tests"', "'Checks \"edge\" cases: all of them'")
+    make_source(tmp_path, toml_text, {"qa-tester": "# QA\n"})
+
+    assert build_agents.main([], root=tmp_path) == 0
+
+    text = (tmp_path / ".claude" / "agents" / "qa-tester.md").read_text(encoding="utf-8")
+    assert 'description: "Checks \\"edge\\" cases: all of them"\n' in text
+
+
+def test_crlf_unicode_source_produces_lf_utf8_output(tmp_path):
+    make_source(tmp_path, QA_TOML, {})
+    (tmp_path / "agents" / "qa-tester.md").write_bytes("# QA\r\n\r\nFail fast — always.\r\n".encode("utf-8"))
+
+    assert build_agents.main([], root=tmp_path) == 0
+
+    data = (tmp_path / ".claude" / "agents" / "qa-tester.md").read_bytes()
+    assert b"\r\n" not in data
+    assert data.endswith("# QA\n\nFail fast — always.\n".encode("utf-8"))
+
+
+@pytest.mark.parametrize(
+    "toml_text, prompts, message",
+    [
+        (QA_TOML, {}, "without a prompt file: qa-tester"),
+        (QA_TOML, {"qa-tester": "x", "extra": "y"}, "without a roles.toml entry: extra"),
+        (QA_TOML.replace("claude_tools", "claude_tool"), {"qa-tester": "x"}, "unknown keys: claude_tool"),
+        (QA_TOML.replace('claude_tools = ["Read", "Bash"]\n', ""), {"qa-tester": "x"}, "sub-agents need 'claude_tools'"),
+        (QA_TOML.replace('description = "Runs tests"\n', ""), {"qa-tester": "x"}, "'description' is required"),
+        (
+            ORCH_TOML + ORCH_TOML.replace("orchestrator", "second-lead"),
+            {"orchestrator": "x", "second-lead": "y"},
+            "only one main agent allowed, found: orchestrator, second-lead",
+        ),
+        ("[roles.qa-tester\n", {"qa-tester": "x"}, "roles.toml"),
+    ],
+)
+def test_invalid_source_is_rejected_and_nothing_written(tmp_path, capsys, toml_text, prompts, message):
+    make_source(tmp_path, toml_text, prompts)
+
+    assert build_agents.main([], root=tmp_path) == 2
+
+    assert message in capsys.readouterr().err
+    assert not (tmp_path / ".claude").exists()
+    assert not (tmp_path / ".agents").exists()
+
+
+def test_missing_manifest_is_reported(tmp_path, capsys):
+    (tmp_path / "agents").mkdir()
+
+    assert build_agents.main([], root=tmp_path) == 2
+
+    assert "agents/roles.toml not found" in capsys.readouterr().err
