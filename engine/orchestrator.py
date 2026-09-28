@@ -19,32 +19,41 @@ class OrchestratorEngine:
         self.state = ProjectState()
 
     def start_brainstorming(self, user_initial_idea: str) -> str:
-        """Step 1: Elicit clarification and crystallize the idea."""
+        """Step 1: Elicit clarification, explain trade-offs, and crystallize the idea."""
         self.state.user_idea = user_initial_idea
         self.state.stage = Stage.BRAINSTORMING
 
         summary = (
-            f"Thank you for sharing your vision! As your Lead Engineering Orchestrator, "
+            f"Thank you for sharing your vision! As your Lead Engineering Orchestrator and Technical Mentor, "
             f"I have analyzed your initial idea: '{user_initial_idea}'.\n\n"
-            f"To structure this into a production-ready application, let us clarify:\n"
-            f"1. Target Users: Who will use this app directly?\n"
+            f"[Mentor Note] In professional software engineering, we avoid jumping straight to code.\n"
+            f"Instead, we first eliminate ambiguities to prevent expensive rewrites later.\n\n"
+            f"Let us collaborate on 4 key architectural decisions:\n"
+            f"1. Target Users: Who will use this app directly, and what is their skill level?\n"
             f"2. Core Workflows: What are the 2-3 most important actions a user takes?\n"
-            f"3. Data & Storage: Should data be stored locally (JSON/SQLite) or remotely?\n"
+            f"3. Data & Storage Trade-offs:\n"
+            f"   - Option A: Local files/SQLite (Lightweight, zero-setup, runs locally)\n"
+            f"   - Option B: Client-server / Cloud DB (Scalable, multi-device, requires server infrastructure)\n"
+            f"   Which matches your expectations?\n"
             f"4. Delivery Interface: Do you prefer a Web UI, Desktop CLI, or REST API?"
         )
         return summary
 
     def synthesize_scope(self, answers_text: str) -> str:
-        """Step 2: Synthesize answers into a locked scope proposal."""
+        """Step 2: Synthesize answers into a locked scope proposal with learning takeaways."""
         self.state.clarifications.append({"answers": answers_text})
         self.state.stage = Stage.APPROVAL_GATE
 
         proposal = (
             f"===========================================================\n"
-            f"PROPOSED APPLICATION SCOPE (EXECUTIVE SPECIFICATION)\n"
+            f"PROPOSED APPLICATION SCOPE (COLLABORATIVE SPECIFICATION)\n"
             f"===========================================================\n"
             f"Vision: {self.state.user_idea}\n"
-            f"Specifications Clarified:\n{answers_text}\n\n"
+            f"Clarifications & Decisions:\n{answers_text}\n\n"
+            f"[Engineering Takeaway: Why We Establish Contracts First]\n"
+            f"In enterprise software firms (MNCs), before allocating developer resources,\n"
+            f"the Engagement Lead and Client agree on a formal scope boundary.\n"
+            f"This prevents 'Scope Creep'—the #1 reason software projects fail or miss deadlines.\n\n"
             f"Deliverables Planned:\n"
             f"  - Formal PRD with User Stories & Acceptance Tests (docs/PRD.md)\n"
             f"  - Technical Architecture & Data Schemas (docs/ARCHITECTURE.md)\n"
@@ -73,9 +82,13 @@ class OrchestratorEngine:
             f"{self.state.user_idea}\n\n"
             f"## 2. Requirements & Scope\n"
             f"{self.state.approved_scope}\n\n"
-            f"## 3. Acceptance Criteria\n"
-            f"- Given valid user inputs, when executed, then the system must produce expected results.\n"
-            f"- System must pass all automated test suites with exit code 0.\n"
+            f"## 3. Acceptance Criteria (Given / When / Then)\n"
+            f"- **Scenario 1**: Given valid user inputs, when executed, then the system must produce expected results.\n"
+            f"- **Scenario 2**: Given unexpected or erroneous inputs, when processed, then the system must handle them gracefully without crashing.\n"
+            f"- **Scenario 3**: System must pass all automated test suites with exit code 0.\n\n"
+            f"## 4. Engineering Takeaway\n"
+            f"Acceptance criteria act as the unambiguous contract between product design and QA testing.\n"
+            f"They remove guesswork and allow QA to write automated assertions before coding even begins (Test-Driven Development).\n"
         )
         self.workspace.write_file("docs/PRD.md", content)
         self.state.prd_content = content
@@ -88,13 +101,17 @@ class OrchestratorEngine:
             f"# Technical Architecture Document\n\n"
             f"## 1. System Overview\n"
             f"Architecture generated based on approved PRD.\n\n"
-            f"## 2. Technology Stack\n"
+            f"## 2. Technology Stack & Trade-off Rationale\n"
             f"- Runtime: Python 3.13+\n"
-            f"- Test Framework: pytest / unittest\n\n"
+            f"- Test Framework: pytest / unittest\n"
+            f"- Design Pattern: Modular service architecture with clear interface boundaries.\n\n"
             f"## 3. Directory Layout\n"
             f"- `src/`: Core implementation modules\n"
             f"- `tests/`: Automated unit & integration tests\n"
-            f"- `docs/`: PRD, Architecture, and Task Backlog\n"
+            f"- `docs/`: PRD, Architecture, and Task Backlog\n\n"
+            f"## 4. Engineering Takeaway\n"
+            f"Separation of concerns (SoC): By keeping data models, business logic, and tests in distinct modules,\n"
+            f"developers can modify one component without causing unexpected side-effects in another.\n"
         )
         self.workspace.write_file("docs/ARCHITECTURE.md", content)
         self.state.architecture_content = content
