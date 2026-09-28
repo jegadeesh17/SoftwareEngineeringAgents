@@ -144,3 +144,56 @@ def test_missing_manifest_is_reported(tmp_path, capsys):
     assert build_agents.main([], root=tmp_path) == 2
 
     assert "agents/roles.toml not found" in capsys.readouterr().err
+
+
+def test_check_fails_until_built_then_passes(tmp_path, capsys):
+    make_source(tmp_path, QA_TOML, {"qa-tester": "# QA\n"})
+
+    assert build_agents.main(["--check"], root=tmp_path) == 1
+    assert ".claude/agents/qa-tester.md" in capsys.readouterr().out
+
+    assert build_agents.main([], root=tmp_path) == 0
+    assert build_agents.main(["--check"], root=tmp_path) == 0
+
+
+def test_check_detects_hand_edited_generated_file(tmp_path):
+    make_source(tmp_path, QA_TOML, {"qa-tester": "# QA\n"})
+    build_agents.main([], root=tmp_path)
+    generated = tmp_path / ".agents" / "agents" / "qa-tester" / "agent.md"
+    with open(generated, "a", encoding="utf-8") as f:
+        f.write("tweak\n")
+
+    assert build_agents.main(["--check"], root=tmp_path) == 1
+
+
+def test_check_accepts_crlf_checkout(tmp_path):
+    make_source(tmp_path, QA_TOML, {"qa-tester": "# QA\n"})
+    build_agents.main([], root=tmp_path)
+    generated = tmp_path / ".claude" / "agents" / "qa-tester.md"
+    generated.write_bytes(generated.read_bytes().replace(b"\n", b"\r\n"))
+
+    assert build_agents.main(["--check"], root=tmp_path) == 0
+
+
+def test_build_removes_stale_generated_agents_but_keeps_hand_written(tmp_path):
+    make_source(tmp_path, QA_TOML, {"qa-tester": "# QA\n"})
+    build_agents.main([], root=tmp_path)
+    stale_text = (
+        "---\nname: old-role\n---\n\n"
+        "<!-- GENERATED from agents/old-role.md — edit the source and run python -m engine.build_agents -->\n\nold\n"
+    )
+    stale_claude = tmp_path / ".claude" / "agents" / "old-role.md"
+    stale_claude.write_text(stale_text, encoding="utf-8")
+    stale_agy = tmp_path / ".agents" / "agents" / "old-role" / "agent.md"
+    stale_agy.parent.mkdir(parents=True)
+    stale_agy.write_text(stale_text, encoding="utf-8")
+    hand_written = tmp_path / ".claude" / "agents" / "my-helper.md"
+    hand_written.write_text("---\nname: my-helper\n---\n\nhand written\n", encoding="utf-8")
+
+    assert build_agents.main(["--check"], root=tmp_path) == 1
+    assert build_agents.main([], root=tmp_path) == 0
+
+    assert not stale_claude.exists()
+    assert not stale_agy.parent.exists()
+    assert hand_written.exists()
+    assert build_agents.main(["--check"], root=tmp_path) == 0
