@@ -7,6 +7,7 @@ Run `python -m engine.build_agents` after editing agents/, or add --check to ver
 
 import argparse
 import json
+import re
 import sys
 import tomllib
 from dataclasses import dataclass
@@ -21,6 +22,7 @@ CLAUDE_COMMAND_PATH = Path("templates") / "claude" / "orchestrate.md"
 GENERATED_MARKER = "<!-- GENERATED from agents/"
 
 ALLOWED_KEYS = {"description", "claude_tools", "antigravity_tools", "main_agent"}
+ROLE_NAME = re.compile(r"[a-z][a-z0-9-]*")
 
 
 @dataclass(frozen=True)
@@ -35,6 +37,10 @@ class Role:
 
 def normalize_newlines(text: str) -> str:
     return text.replace("\r\n", "\n")
+
+
+def _is_string_list(value) -> bool:
+    return isinstance(value, list) and bool(value) and all(isinstance(v, str) and v.strip() for v in value)
 
 
 def load_roles(source_dir: Path) -> List[Role]:
@@ -60,12 +66,21 @@ def load_roles(source_dir: Path) -> List[Role]:
         unknown = sorted(set(entry) - ALLOWED_KEYS)
         if unknown:
             raise ValueError(f"role '{name}': unknown keys: {', '.join(unknown)}")
+        if not ROLE_NAME.fullmatch(name):
+            raise ValueError(f"invalid role name '{name}': use lowercase letters, digits and hyphens")
         for required in ("description", "antigravity_tools"):
             if required not in entry:
                 raise ValueError(f"role '{name}': '{required}' is required")
-        main_agent = entry.get("main_agent", False) is True
+        if not isinstance(entry["description"], str) or not entry["description"].strip():
+            raise ValueError(f"role '{name}': 'description' must be a non-empty string")
+        main_agent = entry.get("main_agent", False)
+        if not isinstance(main_agent, bool):
+            raise ValueError(f"role '{name}': 'main_agent' must be true or false")
         if not main_agent and "claude_tools" not in entry:
             raise ValueError(f"role '{name}': sub-agents need 'claude_tools'")
+        for key in ("claude_tools", "antigravity_tools"):
+            if key in entry and not _is_string_list(entry[key]):
+                raise ValueError(f"role '{name}': '{key}' must be a non-empty list of strings")
         body = normalize_newlines((source_dir / f"{name}.md").read_text(encoding="utf-8")).strip() + "\n"
         roles.append(Role(
             name=name,
