@@ -2,7 +2,7 @@
 Generate native sub-agent files for Claude Code and Antigravity from agents/.
 
 Source of truth: agents/roles.toml (metadata) + agents/<role>.md (prompt bodies).
-Run `python -m engine.build_agents` after editing agents/.
+Run `python -m engine.build_agents` after editing agents/, or add --check to verify without writing.
 """
 
 import argparse
@@ -148,9 +148,39 @@ def write_outputs(outputs: Dict[Path, str], root: Path) -> None:
         path.write_text(content, encoding="utf-8", newline="\n")
 
 
+def find_orphans(outputs: Dict[Path, str], root: Path) -> List[Path]:
+    """Generated files on disk that no longer correspond to a role. Hand-written files are never orphans."""
+    candidates = []
+    for base, pattern in ((CLAUDE_AGENTS_DIR, "*.md"), (ANTIGRAVITY_AGENTS_DIR, "*/agent.md")):
+        if (root / base).exists():
+            candidates += [p.relative_to(root) for p in (root / base).glob(pattern)]
+    return sorted(
+        rel for rel in candidates
+        if rel not in outputs and GENERATED_MARKER in (root / rel).read_text(encoding="utf-8")
+    )
+
+
+def find_stale(outputs: Dict[Path, str], root: Path) -> List[Path]:
+    stale = [
+        rel for rel, content in outputs.items()
+        if not (root / rel).exists()
+        or normalize_newlines((root / rel).read_text(encoding="utf-8")) != content
+    ]
+    return sorted(stale + find_orphans(outputs, root))
+
+
+def remove_orphans(outputs: Dict[Path, str], root: Path) -> None:
+    for rel in find_orphans(outputs, root):
+        path = root / rel
+        path.unlink()
+        if path.name == "agent.md" and not any(path.parent.iterdir()):
+            path.parent.rmdir()
+
+
 def main(argv: Optional[List[str]] = None, root: Optional[Path] = None) -> int:
     parser = argparse.ArgumentParser(description="Generate Claude Code and Antigravity agents from agents/")
-    parser.parse_args(argv)
+    parser.add_argument("--check", action="store_true", help="exit 1 if generated files are out of date")
+    args = parser.parse_args(argv)
     root = root or REPO_ROOT
 
     try:
@@ -159,7 +189,18 @@ def main(argv: Optional[List[str]] = None, root: Optional[Path] = None) -> int:
         print(f"error: {e}", file=sys.stderr)
         return 2
 
+    if args.check:
+        stale = find_stale(outputs, root)
+        if stale:
+            print("Generated agent files are out of date (run: python -m engine.build_agents):")
+            for rel in stale:
+                print(f"  {rel.as_posix()}")
+            return 1
+        print("Generated agent files are up to date.")
+        return 0
+
     write_outputs(outputs, root)
+    remove_orphans(outputs, root)
     print(f"Wrote {len(outputs)} generated files.")
     return 0
 
