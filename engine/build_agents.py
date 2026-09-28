@@ -23,6 +23,8 @@ GENERATED_MARKER = "<!-- GENERATED from agents/"
 
 ALLOWED_KEYS = {"description", "claude_tools", "antigravity_tools", "main_agent"}
 ROLE_NAME = re.compile(r"[a-z][a-z0-9-]*")
+# Sub-agents are installed globally, so keep other sessions from routing unrelated work to them
+SUBAGENT_SCOPE = " Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
 
 
 @dataclass(frozen=True)
@@ -106,11 +108,15 @@ def _yaml_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
+def _description(role: Role) -> str:
+    return role.description if role.main_agent else role.description + SUBAGENT_SCOPE
+
+
 def render_claude_agent(role: Role) -> str:
     return (
         "---\n"
         f"name: {role.name}\n"
-        f"description: {_yaml_string(role.description)}\n"
+        f"description: {_yaml_string(_description(role))}\n"
         f"tools: {', '.join(role.claude_tools)}\n"
         "model: inherit\n"
         "---\n\n"
@@ -124,7 +130,7 @@ def render_antigravity_agent(role: Role) -> str:
     return (
         "---\n"
         f"name: {role.name}\n"
-        f"description: {_yaml_string(role.description)}\n"
+        f"description: {_yaml_string(_description(role))}\n"
         f"tools:\n{tools}"
         "model: inherit\n"
         f"mainAgent: {'true' if role.main_agent else 'false'}\n"

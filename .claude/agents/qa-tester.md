@@ -1,6 +1,6 @@
 ---
 name: qa-tester
-description: "Writes and runs automated tests for one task and records the exact command and exit code in docs/QA_RESULTS.json."
+description: "Writes and runs automated tests for one task and records the exact command and exit code in docs/QA_RESULTS.json. Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Write, Edit, Glob, Grep, Bash
 model: inherit
 ---

@@ -1,6 +1,6 @@
 ---
 name: devops-git
-description: "Commits an approved milestone's files as one Conventional Commit, staging only the listed files."
+description: "Commits an approved milestone's files as one Conventional Commit, staging only the listed files. Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Glob, Grep, Bash
 model: inherit
 ---
