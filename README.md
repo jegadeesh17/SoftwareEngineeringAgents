@@ -54,6 +54,8 @@ This installs:
 - `~/.claude/commands/orchestrate.md`: the `/orchestrate` command.
 - `~/.gemini/config/agents/*/agent.md`: the orchestrator and 7 sub-agents for Antigravity.
 
+The installer records what it wrote in `~/.se-agents/installed.json`. Re-running it after `git pull` updates files it installed before and keeps any you've edited. It exits with an error if it had to skip a file.
+
 Options:
 - `--force` overwrites files you've customized. Without it they are kept.
 - `--global-rules` also installs an always-on naming-convention rule for every Antigravity project.
