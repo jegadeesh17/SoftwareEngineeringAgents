@@ -1,0 +1,5 @@
+# Keep the agent source and generated files LF in the working tree (see engine/build_agents.py)
+agents/** text eol=lf
+.claude/agents/*.md text eol=lf
+.agents/agents/**/agent.md text eol=lf
+templates/claude/*.md text eol=lf
