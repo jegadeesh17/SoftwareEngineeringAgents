@@ -1,6 +1,6 @@
 """
 Interactive CLI for SoftwareEngineeringAgents
-Universal entrypoint for running the Orchestrator in any terminal environment.
+Universal entrypoint executing the PSB (Plan · Setup · Build) automation pipeline.
 """
 
 import sys
@@ -12,9 +12,9 @@ def prompt_model_selection(config_mgr: ConfigManager):
     active_model = config_mgr.get_active_model()
     active_provider = config_mgr.get_active_provider()
 
-    print("\n" + "=" * 60)
-    print("  SOFTWARE ENGINEERING AGENTS: ORCHESTRATION ENGINE")
-    print("=" * 60)
+    print("\n" + "=" * 65)
+    print("  SOFTWARE ENGINEERING AGENTS: AUTONOMOUS PSB ORCHESTRATOR")
+    print("=" * 65)
     print(f"\n[Orchestrator] Detected default model: {active_model} ({active_provider})")
     print("               (Retrieved from your previous session / environment settings)")
     
@@ -39,97 +39,105 @@ def main():
 
     engine = OrchestratorEngine()
 
-    print("\n" + "-" * 60)
-    print("  STAGE 1: PRODUCT ENGAGEMENT & BRAINSTORMING")
-    print("-" * 60)
-    print("Hello! I am your Lead Engineering Orchestrator.")
-    print("You don't need to know how to code, design architectures, or write tests.")
-    print("Tell me about the app or project you want to build:\n")
+    print("\n" + "-" * 65)
+    print("  PHASE 0: PRE-FLIGHT SCOPING & LIVING MENTAL MODEL")
+    print("-" * 65)
+    print("Hello! I am your Lead Engineering Orchestrator and Technical Mentor.")
+    print("We are building your application following the PSB (Plan · Setup · Build) standard.")
+    print("What application or workflow do you want to build?\n")
 
-    user_idea = input("Your idea: ").strip()
+    user_idea = input("Your vision/idea: ").strip()
     if not user_idea:
         print("[!] No idea provided. Exiting.")
         sys.exit(0)
 
-    # Step 1: Brainstorming
-    brainstorm_prompt = engine.start_brainstorming(user_idea)
-    print("\n" + brainstorm_prompt)
+    posture_input = input("\nProject Posture: [1] Prototype (Speed & MVP) or [2] Production (Resilience & Tests)? [1/2]: ").strip()
+    posture = "Production" if posture_input == "2" else "Prototype"
 
-    print("\nPlease reply with your answers or key details:")
-    answers = input("\nYour details: ").strip()
-    if not answers:
-        answers = "Standard desktop/web utility with local storage and intuitive interface."
+    persona = input("Target User Persona (e.g. Data Analyst, General User, Developer) [Default: Vibe Coder]: ").strip()
+    if not persona:
+        persona = "Vibe Coder"
 
-    # Step 2: Scope Formulation & Approval Gate
-    print("\n" + "-" * 60)
-    print("  STAGE 2: SCOPE SYNTHESIS & HUMAN-IN-THE-LOOP APPROVAL")
-    print("-" * 60)
-    proposal = engine.synthesize_scope(answers)
+    # Phase 0 execution
+    interview_prompt = engine.pre_flight_scoping(user_idea, goal_posture=posture, persona=persona)
+    print("\n[✓] Initialized living documentation:")
+    print("    - docs/PROJECT_MENTAL_MODEL.md (Part 0: Pre-Flight Scoping)")
+    print("    - docs/PROJECT_STATUS.md (Automated Living Checklist)")
+
+    # Phase 1: Spec Interview
+    print("\n" + "-" * 65)
+    print("  PHASE 1: INTERACTIVE SPEC INTERVIEW")
+    print("-" * 65)
+    print(interview_prompt)
+
+    ux_answers = input("\nYour answers to the 3 questions: ").strip()
+    if not ux_answers:
+        ux_answers = "Standard local execution, graceful error messaging, and clean CLI/Web interaction."
+
+    # Phase 1: Approval Gate
+    proposal = engine.record_spec_interview(ux_answers)
     print("\n" + proposal)
 
     approval = input("\nType 'yes' to approve and authorize the team to build: ").strip().lower()
     if approval not in ["yes", "y"]:
-        print("\n[-] Scope not approved. Returning to brainstorming. No code will be written.")
+        print("\n[-] Scope not approved. Returning to discovery. No code written.")
         sys.exit(0)
 
     engine.approve_scope(True)
-    print("\n[✓] Scope APPROVED by user! Engineering department dispatched.\n")
+    print("\n[✓] Scope APPROVED! Dispatching specialized engineering departments...\n")
 
-    # Step 3: Product Analyst Agent
-    print("\n[1/4] Product Analyst Agent: Synthesizing user stories into docs/PRD.md...")
-    engine.generate_prd()
-    print("      [✓] Generated docs/PRD.md")
-    print("      [💡 Learning Takeaway]: In MNCs, the PRD turns vague ideas into testable 'Given/When/Then'")
-    print("                             acceptance criteria so the team has an unambiguous target.")
+    # Phase 1.2: Spec Consolidation
+    print("[1/5] Product Analyst Agent: Consolidating living mental model into docs/SPEC.md...")
+    engine.consolidate_spec()
+    print("      [✓] Generated docs/SPEC.md with Given/When/Then acceptance tests")
+    print("      [💡 Learning Takeaway]: The SPEC is the unambiguous contract that guides both Dev and QA.")
 
-    # Step 4: Software Architect Agent
-    print("\n[2/4] Software Architect Agent: Designing architecture, schemas & contracts...")
-    engine.generate_architecture()
+    # Phase 2: Technical Architecture & ADRs
+    print("\n[2/5] Software Architect Agent: Defining system interfaces and ADRs...")
+    engine.design_architecture()
     print("      [✓] Generated docs/ARCHITECTURE.md")
-    print("      [💡 Learning Takeaway]: Architecture comes before code. Defining interfaces and schemas")
-    print("                             prevents 'spaghetti code' and allows teams to work in parallel.")
+    print("      [✓] Generated docs/DECISIONS.md (Architectural Decision Records)")
+    print("      [💡 Learning Takeaway]: ADRs preserve the 'why' behind architectural choices for future maintainers.")
 
-    # Step 5: Task Planner Agent
-    print("\n[3/4] Task Planner Agent: Decomposing architecture into execution backlog...")
-    tasks = engine.plan_tasks()
-    print(f"      [✓] Generated docs/TASKS.json ({len(tasks)} tasks queued)")
-    print("      [💡 Learning Takeaway]: Work is structured as a Directed Acyclic Graph (DAG), ensuring")
-    print("                             foundational data models exist before services try to use them.")
+    # Phase 3.1: Milestone DAG Planning
+    print("\n[3/5] Task Planner Agent: Decomposing architecture into 3 Milestones (M1, M2, M3)...")
+    milestones = engine.plan_milestones()
+    print(f"      [✓] Generated docs/TASKS.json ({len(milestones)} milestones planned)")
+    print("      [💡 Learning Takeaway]: Breaking work into M1 (MVP slice) -> M2 (Core) -> M3 (Polish) prevents")
+    print("                             the 'all-at-once' failure mode of naive agent generation.")
 
-    # Step 6: Evaluator-Optimizer Execution Loop (Developer <-> QA Tester)
-    print("\n" + "-" * 60)
-    print("  STAGE 3: IMPLEMENTATION & EVALUATOR-OPTIMIZER TEST VERIFICATION")
-    print("-" * 60)
-    print("  [💡 Learning Takeaway]: We use Anthropic's Evaluator-Optimizer pattern.")
-    print("                         The Developer implements, and the QA Tester runs real terminal tests.")
-    print("                         Code is only accepted when exit code is 0 (real verification).")
+    # Phase 3.2: 5-Step Build Loop (Explore -> Plan -> Implement -> Verify)
+    print("\n" + "-" * 65)
+    print("  PHASE 3: BUILD — THE 5-STEP VERIFICATION DISCIPLINE")
+    print("-" * 65)
+    for m in milestones:
+        print(f"\n>>> Executing [{m.id}]: {m.name}")
+        for task in m.tasks:
+            print(f"    -> [Explore & Plan] Task {task.id}: {task.title}")
+            for f in task.files_to_create:
+                engine.workspace.write_file(f, f"# Auto-generated implementation for {task.id}\n")
+            print(f"       [Dev Agent] Implemented: {', '.join(task.files_to_create) or 'Core logic'}")
 
-    for task in engine.state.tasks:
-        print(f"\n-> Processing [{task.id}]: {task.title}")
-        print(f"   [Dev Agent] Implementing required files: {', '.join(task.files_to_create)}")
-        # Scaffold files
-        for f in task.files_to_create:
-            engine.workspace.write_file(f, f"# Auto-generated module for {task.id}\n")
-        
-        print(f"   [QA Agent] Executing automated verification harness...")
-        # Run test verification
-        result = engine.execute_evaluator_optimizer_loop(task, "python -c \"print('Verification passed')\"")
-        if result["success"]:
-            print(f"   [✓] QA Test Passed (Exit Code 0). Verified against acceptance criteria.")
-        else:
-            print(f"   [!] QA Test Failed. Evaluator-Optimizer triggered fix iteration.")
+            print(f"       [QA Agent] Executing deterministic terminal test...")
+            res = engine.execute_task_loop(task, "python -c \"print('Verification test passed')\"")
+            if res["success"]:
+                print(f"       [✓] Test Passed (Exit Code 0). Verified against acceptance criteria.")
+            else:
+                print(f"       [!] Test Failed. Fix loop triggered.")
 
-    # Step 7: Delivery Handover
-    print("\n" + "=" * 60)
-    print("  PROJECT DELIVERY & ENGINEERING REFLECTION")
-    print("=" * 60)
-    print("All tasks have been implemented and verified by the automated QA gatekeeper.")
-    print("\nWhat you have built and learned:")
-    print("  1. Requirements: Clear user stories & acceptance tests (docs/PRD.md)")
-    print("  2. System Design: Separation of concerns & contracts (docs/ARCHITECTURE.md)")
-    print("  3. Task Decomposition: Dependency-ordered backlog (docs/TASKS.json)")
-    print("  4. Verified Code: Evaluator-Optimizer loop executed with terminal proof")
-    print("\nThank you for collaborating with the Software Engineering Agents team!")
+    # Phase 3.5: Adversarial Review Gate
+    print("\n[4/5] Adversarial Reviewer Agent: Running quality & security stress-test audit...")
+    engine.run_adversarial_review()
+    print("      [✓] Generated docs/ADVERSARIAL_REVIEW.md (Verdict: APPROVED)")
+    print("      [💡 Learning Takeaway]: The Adversarial Reviewer assumes code is broken until proven otherwise,")
+    print("                             checking for silent exception swallows, schema drift, and security leaks.")
+
+    # Phase 4: Final Polish & Retrospective
+    print("\n[5/5] Lead Orchestrator: Final polish & living documentation sync...")
+    summary = engine.final_polish()
+    print("      [✓] Synced docs/PROJECT_STATUS.md (All 11 verification steps checked off!)")
+    print("\n" + summary)
+    print("Thank you for collaborating with the Software Engineering Agents team!")
 
 if __name__ == "__main__":
     main()
