@@ -1,2 +1,2 @@
-# SoftwareEngineeringAgents Dependencies
+# Development dependencies (the project has no runtime dependencies)
 pytest>=8.0.0

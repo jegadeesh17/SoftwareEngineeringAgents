@@ -1,30 +1,29 @@
-# SoftwareEngineeringAgents
+# SoftwareEngineeringAgents: Developer Guide
 
-Autonomous software engineering team orchestration for non-technical vibe coders.
+This repository **defines** an AI engineering team. It is not where the team builds projects: users install the team and run it inside their own project folders.
 
-## Core Philosophy: Capability × AI Leverage
-The Orchestrator acts as both a **Delivery Manager** and a **Technical Mentor**. Communication is bidirectional:
-- Rather than an opaque vending machine that spits out code, the Orchestrator ensures the user learns how engineering teams design, make trade-offs, and verify systems.
-- Every major phase includes an **Engineering Takeaway** demystifying the underlying concepts.
+## Layout
 
-## System Topology & Roles
-This repository operates as a managed software engineering department:
-- **Lead Orchestrator / Mentor**: Brainstorms with user, surfaces trade-offs, enforces Human-In-The-Loop (HITL) approval, and leads the specialized team.
-- **Product Analyst** (`skills/product-analyst`): Translates conversations into `docs/SPEC.md` and living `docs/PROJECT_MENTAL_MODEL.md`.
-- **Software Architect** (`skills/software-architect`): Designs technical contracts in `docs/ARCHITECTURE.md` and records ADRs in `docs/DECISIONS.md`.
-- **Task Planner** (`skills/task-planner`): Decomposes architecture into 3 Milestones (M1 MVP, M2 Core, M3 Polish) in `docs/TASKS.json`.
-- **Software Developer** (`skills/software-developer`): Follows the 5-step build discipline to implement task-by-task.
-- **QA Tester** (`skills/qa-tester`): Writes automated tests and executes them in the terminal for deterministic verification.
-- **Adversarial Reviewer** (`skills/adversarial-reviewer`): Stress-tests implementation for silent failures, schema drift, and security.
-- **DevOps & Git Disciplinarian** (`skills/devops-git`): Enforces atomic Conventional Commits at milestone boundaries to preserve full history.
+| Path | What it is |
+|---|---|
+| `agents/roles.toml`, `agents/*.md` | **Source of truth.** Role metadata and one prompt per role. Edit here. |
+| `.claude/agents/`, `.agents/agents/`, `templates/claude/orchestrate.md` | **Generated.** Never edit by hand. |
+| `engine/build_agents.py` | Generator: renders `agents/` into each tool's format. |
+| `scripts/install_global.py` | Installer: copies generated files into `~/.claude/` and `~/.gemini/config/`. |
+| `.agents/rules/nomenclature-standards.md` | Optional global naming rule (installed with `--global-rules`). |
+| `docs/superpowers/` | Design specs and implementation plans. |
 
-## Observability & Telemetry Standard
-- Every agent invocation, input prompt, tool execution, and token metric is recorded to `.orchestrator/traces/session_<id>.jsonl`.
-- Provides full auditability without external SaaS dependency or network bloat.
+## Changing the team
 
-## Operational Standards
-1. **Bidirectional Learning**: Clarify requirements while explaining *why* technical trade-offs matter.
-2. **Human Gate**: Never start coding without explicit user confirmation on the synthesized scope.
-3. **Deterministic Verification**: No task is completed without running real tests via terminal tools.
-4. **Git Discipline**: Every milestone is committed with clear Conventional Commit messages.
-5. **Living Docs Sync**: Automatically checks off completed steps in `docs/PROJECT_STATUS.md`.
+1. Edit `agents/roles.toml` or `agents/<role>.md`.
+2. Regenerate: `python -m engine.build_agents`
+3. Test: `python -m pytest -q`. This includes a drift check that fails if the generated files are stale.
+4. Commit the source and the generated files together.
+
+Requires Python 3.11+. Dev dependencies: `pip install -e ".[dev]"`.
+
+## Tool names
+
+- `claude_tools` use Claude Code names: `Read`, `Write`, `Edit`, `Glob`, `Grep`, `Bash`.
+- `antigravity_tools` use Antigravity names: `view_file`, `write_to_file`, `replace_file_content`, `grep_search`, `run_command`, `invoke_subagent`.
+- The orchestrator (`main_agent = true`) has no Claude tool list: in Claude Code it runs as the main session via `/orchestrate`.
