@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "software-engineering-agents"
+version = "0.1.0"
+description = "Autonomous software engineering organization built for non-technical vibe coders"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+orchestrate = "engine.cli:main"
+se-agents = "engine.cli:main"
+
+[tool.setuptools]
+packages = ["engine", "engine.tools"]
