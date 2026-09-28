@@ -83,7 +83,8 @@ class ObservabilityLayer:
     def __init__(self, trace_dir: Optional[Path] = None):
         self.trace_dir = trace_dir or Path(".orchestrator") / "traces"
         self.trace_dir.mkdir(parents=True, exist_ok=True)
-        self.session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # Random suffix keeps sessions started in the same second from sharing a trace file
+        self.session_id = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
         self.trace_file = self.trace_dir / f"session_{self.session_id}.jsonl"
         self.spans: List[TraceSpan] = []
         self.total_prompt_tokens = 0

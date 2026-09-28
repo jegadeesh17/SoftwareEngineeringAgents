@@ -8,7 +8,10 @@ version = "0.1.0"
 description = "Autonomous software engineering organization built for non-technical vibe coders"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = [
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
     "pytest>=8.0.0",
 ]
 

@@ -5,6 +5,7 @@ Handles sticky model detection, session persistence, and user model overrides.
 
 import json
 import os
+import warnings
 from pathlib import Path
 from typing import Dict, Any, Optional
 
@@ -12,15 +13,16 @@ DEFAULT_CONFIG_PATH = Path(".orchestrator") / "config.json"
 
 DEFAULT_MODELS = {
     "gemini": "gemini-2.5-pro",
-    "anthropic": "claude-3-7-sonnet",
+    "anthropic": "claude-sonnet-5",
     "openai": "gpt-4o",
 }
 
 AVAILABLE_MODELS = [
     {"provider": "gemini", "model": "gemini-2.5-pro", "desc": "Google Gemini 2.5 Pro (Recommended for reasoning & architecture)"},
     {"provider": "gemini", "model": "gemini-2.5-flash", "desc": "Google Gemini 2.5 Flash (Fast execution)"},
-    {"provider": "anthropic", "model": "claude-3-7-sonnet", "desc": "Anthropic Claude 3.7 Sonnet (Hybrid reasoning & coding)"},
-    {"provider": "anthropic", "model": "claude-3-5-haiku", "desc": "Anthropic Claude 3.5 Haiku (Fast helper)"},
+    {"provider": "anthropic", "model": "claude-opus-5-5", "desc": "Anthropic Claude Opus 5.5 (Deep reasoning & architecture)"},
+    {"provider": "anthropic", "model": "claude-sonnet-5", "desc": "Anthropic Claude Sonnet 5 (Balanced coding)"},
+    {"provider": "anthropic", "model": "claude-haiku-4-5-20251001", "desc": "Anthropic Claude Haiku 4.5 (Fast helper)"},
     {"provider": "openai", "model": "gpt-4o", "desc": "OpenAI GPT-4o (General purpose)"},
     {"provider": "openai", "model": "gpt-4o-mini", "desc": "OpenAI GPT-4o Mini (Fast helper)"},
 ]
@@ -35,24 +37,34 @@ class ConfigManager:
             try:
                 with open(self.config_file, "r", encoding="utf-8") as f:
                     return json.load(f)
-            except Exception:
-                pass
+            except (OSError, json.JSONDecodeError) as e:
+                warnings.warn(
+                    f"Ignoring unreadable config {self.config_file} ({e}); using detected defaults.",
+                    stacklevel=2,
+                )
         return self._detect_defaults()
 
     def _detect_defaults(self) -> Dict[str, Any]:
-        """Detect default model from environment variables or sensible default."""
-        provider = "gemini"
-        model = "gemini-2.5-pro"
+        """Detect default model from environment variables or sensible default.
 
-        if os.environ.get("ANTHROPIC_API_KEY"):
-            provider = "anthropic"
-            model = os.environ.get("ANTHROPIC_MODEL", "claude-3-7-sonnet")
-        elif os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"):
-            provider = "gemini"
-            model = os.environ.get("GEMINI_MODEL", "gemini-2.5-pro")
-        elif os.environ.get("OPENAI_API_KEY"):
-            provider = "openai"
-            model = os.environ.get("OPENAI_MODEL", "gpt-4o")
+        An explicit *_MODEL variable wins; otherwise the first provider with an API key.
+        """
+        provider = "gemini"
+        model = DEFAULT_MODELS["gemini"]
+
+        model_vars = [("anthropic", "ANTHROPIC_MODEL"), ("gemini", "GEMINI_MODEL"), ("openai", "OPENAI_MODEL")]
+        key_vars = [
+            ("anthropic", ["ANTHROPIC_API_KEY"]),
+            ("gemini", ["GEMINI_API_KEY", "GOOGLE_API_KEY"]),
+            ("openai", ["OPENAI_API_KEY"]),
+        ]
+        explicit = next(((p, os.environ[v]) for p, v in model_vars if os.environ.get(v)), None)
+        if explicit:
+            provider, model = explicit
+        else:
+            keyed = next((p for p, keys in key_vars if any(os.environ.get(k) for k in keys)), None)
+            if keyed:
+                provider, model = keyed, DEFAULT_MODELS[keyed]
 
         return {
             "default_provider": provider,
