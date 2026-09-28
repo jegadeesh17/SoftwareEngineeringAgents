@@ -10,14 +10,21 @@ The Orchestrator acts as both a **Delivery Manager** and a **Technical Mentor**.
 ## System Topology & Roles
 This repository operates as a managed software engineering department:
 - **Lead Orchestrator / Mentor**: Brainstorms with user, surfaces trade-offs, enforces Human-In-The-Loop (HITL) approval, and leads the specialized team.
-- **Product Analyst** (`skills/product-analyst`): Translates conversations into `docs/PRD.md` with acceptance criteria.
-- **Software Architect** (`skills/software-architect`): Designs technical contracts and data models in `docs/ARCHITECTURE.md`.
-- **Task Planner** (`skills/task-planner`): Decomposes architecture into an ordered DAG in `docs/TASKS.json`.
-- **Software Developer** (`skills/software-developer`): Implements code files task-by-task.
-- **QA Tester** (`skills/qa-tester`): Writes automated tests and executes them in the terminal.
+- **Product Analyst** (`skills/product-analyst`): Translates conversations into `docs/SPEC.md` and living `docs/PROJECT_MENTAL_MODEL.md`.
+- **Software Architect** (`skills/software-architect`): Designs technical contracts in `docs/ARCHITECTURE.md` and records ADRs in `docs/DECISIONS.md`.
+- **Task Planner** (`skills/task-planner`): Decomposes architecture into 3 Milestones (M1 MVP, M2 Core, M3 Polish) in `docs/TASKS.json`.
+- **Software Developer** (`skills/software-developer`): Follows the 5-step build discipline to implement task-by-task.
+- **QA Tester** (`skills/qa-tester`): Writes automated tests and executes them in the terminal for deterministic verification.
+- **Adversarial Reviewer** (`skills/adversarial-reviewer`): Stress-tests implementation for silent failures, schema drift, and security.
+- **DevOps & Git Disciplinarian** (`skills/devops-git`): Enforces atomic Conventional Commits at milestone boundaries to preserve full history.
+
+## Observability & Telemetry Standard
+- Every agent invocation, input prompt, tool execution, and token metric is recorded to `.orchestrator/traces/session_<id>.jsonl`.
+- Provides full auditability without external SaaS dependency or network bloat.
 
 ## Operational Standards
 1. **Bidirectional Learning**: Clarify requirements while explaining *why* technical trade-offs matter.
 2. **Human Gate**: Never start coding without explicit user confirmation on the synthesized scope.
 3. **Deterministic Verification**: No task is completed without running real tests via terminal tools.
-4. **Artifact-Driven Communication**: Agents communicate via structured documents (`docs/`), not bloated conversational threads.
+4. **Git Discipline**: Every milestone is committed with clear Conventional Commit messages.
+5. **Living Docs Sync**: Automatically checks off completed steps in `docs/PROJECT_STATUS.md`.

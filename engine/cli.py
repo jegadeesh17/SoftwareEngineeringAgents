@@ -1,10 +1,17 @@
 """
 Interactive CLI for SoftwareEngineeringAgents
-Universal entrypoint executing the PSB (Plan · Setup · Build) automation pipeline.
+Universal entrypoint executing the PSB (Plan · Setup · Build) automation pipeline
+with real-time OpenInference-compatible Observability and Git discipline.
 """
 
 import sys
 from pathlib import Path
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
 from engine.config import ConfigManager, AVAILABLE_MODELS
 from engine.orchestrator import OrchestratorEngine
 
@@ -38,6 +45,8 @@ def main():
     prompt_model_selection(config_mgr)
 
     engine = OrchestratorEngine()
+    print(f"\n[📡 Observability Layer Active]: Recording agent traces and token metrics to:")
+    print(f"                               {engine.telemetry.trace_file}")
 
     print("\n" + "-" * 65)
     print("  PHASE 0: PRE-FLIGHT SCOPING & LIVING MENTAL MODEL")
@@ -136,6 +145,18 @@ def main():
     print("\n[5/5] Lead Orchestrator: Final polish & living documentation sync...")
     summary = engine.final_polish()
     print("      [✓] Synced docs/PROJECT_STATUS.md (All 11 verification steps checked off!)")
+
+    # Observability & Git Discipline Summary
+    telemetry_summary = engine.telemetry.get_summary()
+    print("\n" + "=" * 65)
+    print("  📊 OBSERVABILITY & TELEMETRY SUMMARY")
+    print("=" * 65)
+    print(f"  Session ID       : {telemetry_summary['session_id']}")
+    print(f"  Total Spans      : {telemetry_summary['total_spans']} (Active: {telemetry_summary['active_spans']}, Failed: {telemetry_summary['failed_spans']})")
+    print(f"  Estimated Tokens : {telemetry_summary['tokens']['total']} (Prompt: {telemetry_summary['tokens']['prompt']}, Completion: {telemetry_summary['tokens']['completion']})")
+    print(f"  Trace File       : {telemetry_summary['trace_file']}")
+    print("=" * 65)
+
     print("\n" + summary)
     print("Thank you for collaborating with the Software Engineering Agents team!")
 
