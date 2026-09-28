@@ -15,9 +15,5 @@ dev = [
     "pytest>=8.0.0",
 ]
 
-[project.scripts]
-orchestrate = "engine.cli:main"
-se-agents = "engine.cli:main"
-
 [tool.setuptools]
-packages = ["engine", "engine.tools"]
+packages = ["engine"]
