@@ -7,7 +7,7 @@ name = "software-engineering-agents"
 version = "0.1.0"
 description = "Autonomous software engineering organization built for non-technical vibe coders"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = []
 
 [project.optional-dependencies]
