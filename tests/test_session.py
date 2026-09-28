@@ -6,9 +6,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from engine.orchestrator import OrchestratorEngine
 
-def test_full_session():
+def test_full_session(tmp_path, monkeypatch):
     print("\n--- Starting E2E Session Test ---")
-    eng = OrchestratorEngine()
+    monkeypatch.chdir(tmp_path)
+    eng = OrchestratorEngine(workspace_dir=tmp_path)
 
     # Phase 0: Pre-flight scoping
     prompt = eng.pre_flight_scoping(
@@ -87,7 +88,3 @@ def test_full_session():
         content = eng.workspace.read_file(doc)
         assert content is not None, f"Missing document: {doc}"
     print("[✓] All 7 Living Documents created and verified on disk.")
-
-if __name__ == "__main__":
-    test_full_session()
-    print("\n=== ALL E2E SESSION TESTS PASSED SUCCESSFULLY ===")

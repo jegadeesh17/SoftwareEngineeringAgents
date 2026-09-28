@@ -29,11 +29,12 @@ CHECKLIST_ITEMS = [
 
 class OrchestratorEngine:
     def __init__(self, workspace_dir: Optional[Path] = None):
-        self.workspace = WorkspaceTool(workspace_dir)
-        self.terminal = TerminalTool(workspace_dir)
-        self.config_mgr = ConfigManager()
+        root = workspace_dir or Path.cwd()
+        self.workspace = WorkspaceTool(root)
+        self.terminal = TerminalTool(root)
+        self.config_mgr = ConfigManager(root / ".orchestrator" / "config.json")
         self.state = ProjectState()
-        self.telemetry = ObservabilityLayer()
+        self.telemetry = ObservabilityLayer(root / ".orchestrator" / "traces")
         self._init_checklist()
 
     def _init_checklist(self):
@@ -344,20 +345,24 @@ class OrchestratorEngine:
         self.telemetry.end_span(span, report)
         return report
 
-    def commit_milestone(self, commit_type: str, scope: str, message: str, files_to_stage: Optional[List[str]] = None) -> bool:
-        """DevOps & Git Discipline: Atomic Conventional Commit recording milestone progress."""
+    def commit_milestone(self, commit_type: str, scope: str, message: str, files_to_stage: List[str]) -> bool:
+        """DevOps & Git Discipline: Atomic Conventional Commit of only the milestone's files."""
         span = self.telemetry.start_span("devops_git", "GIT_COMMIT", f"{commit_type}({scope})")
-        files_arg = " ".join(files_to_stage) if files_to_stage else "."
-        stage_cmd = f"git add {files_arg}"
-        self.terminal.run_command(stage_cmd)
-
         commit_msg = f"{commit_type}({scope}): {message}"
-        commit_cmd = f'git commit -m "{commit_msg}"'
-        res = self.terminal.run_command(commit_cmd)
+
+        if not files_to_stage:
+            # Never fall back to `git add .` — that would sweep unrelated work into the commit
+            span.error_message = "No files to stage for milestone commit"
+            span.record_output({"commit_msg": commit_msg, "passed": False}, status="ERROR")
+            self.telemetry.end_span(span, status="ERROR")
+            return False
+
+        stage = self.terminal.run_command(["git", "add", "--", *files_to_stage])
+        res = self.terminal.run_command(["git", "commit", "-m", commit_msg]) if stage.passed else stage
 
         output = {"commit_msg": commit_msg, "exit_code": res.exit_code, "passed": res.passed}
         span.record_output(output, status="OK" if res.passed else "ERROR")
-        self.telemetry.end_span(span)
+        self.telemetry.end_span(span, status="OK" if res.passed else "ERROR")
         return res.passed
 
     def final_polish(self) -> str:
