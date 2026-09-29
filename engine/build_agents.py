@@ -21,7 +21,9 @@ ANTIGRAVITY_AGENTS_DIR = Path(".agents") / "agents"
 CLAUDE_COMMAND_PATH = Path("templates") / "claude" / "orchestrate.md"
 GENERATED_MARKER = "<!-- GENERATED from agents/"
 
-ALLOWED_KEYS = {"description", "claude_tools", "antigravity_tools", "main_agent"}
+ALLOWED_KEYS = {"description", "claude_tools", "antigravity_tools", "main_agent", "claude_model"}
+# Claude Code model aliases; Antigravity output always inherits the session model
+CLAUDE_MODELS = ("inherit", "opus", "sonnet", "haiku")
 ROLE_NAME = re.compile(r"[a-z][a-z0-9-]*")
 # Sub-agents are installed globally, so keep other sessions from routing unrelated work to them
 SUBAGENT_SCOPE = " Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
@@ -35,6 +37,7 @@ class Role:
     antigravity_tools: List[str]
     claude_tools: Optional[List[str]] = None
     main_agent: bool = False
+    claude_model: str = "inherit"
 
 
 def normalize_newlines(text: str) -> str:
@@ -84,6 +87,11 @@ def load_roles(source_dir: Path) -> List[Role]:
         for key in ("claude_tools", "antigravity_tools"):
             if key in entry and not _is_string_list(entry[key]):
                 raise ValueError(f"role '{name}': '{key}' must be a non-empty list of strings")
+        if main_agent and "claude_model" in entry:
+            raise ValueError(f"role '{name}': 'claude_model' applies to sub-agents only")
+        claude_model = entry.get("claude_model", "inherit")
+        if claude_model not in CLAUDE_MODELS:
+            raise ValueError(f"role '{name}': 'claude_model' must be one of {', '.join(CLAUDE_MODELS)}")
         body = normalize_newlines((source_dir / f"{name}.md").read_text(encoding="utf-8-sig")).strip() + "\n"
         roles.append(Role(
             name=name,
@@ -92,6 +100,7 @@ def load_roles(source_dir: Path) -> List[Role]:
             antigravity_tools=list(entry["antigravity_tools"]),
             claude_tools=list(entry["claude_tools"]) if "claude_tools" in entry else None,
             main_agent=main_agent,
+            claude_model=claude_model,
         ))
 
     main_agents = [r.name for r in roles if r.main_agent]
@@ -119,7 +128,7 @@ def render_claude_agent(role: Role) -> str:
         f"name: {role.name}\n"
         f"description: {_yaml_string(_description(role))}\n"
         f"tools: {', '.join(role.claude_tools)}\n"
-        "model: inherit\n"
+        f"model: {role.claude_model}\n"
         "---\n\n"
         + _banner(role)
         + role.body

@@ -24,15 +24,17 @@ You implement exactly one task from `docs/TASKS.json`.
 
 ## Rules
 
+- Implement the minimum that satisfies the task's acceptance criteria. Do not add features, options, styling or abstractions the task does not ask for.
 - Follow the interfaces in `docs/ARCHITECTURE.md` exactly. If one is wrong, report it instead of silently deviating.
+- For a large file, write a short skeleton first, then fill it in section by section with edits, rather than generating the whole file in one pass.
 - Validate input at boundaries: handle empty, missing and malformed values.
 - Never swallow errors (no bare `except: pass`, no empty `catch`).
-- No hard-coded secrets. Read configuration from environment variables.
+- No hard-coded secrets. Read configuration from environment variables. If you introduce a variable that is not in `.env.example`, add it there as `NAME=` with a comment on what it is for, and report it. Never write real values into `.env` or `.env.example`.
 - Naming: in Python, `snake_case.py` modules and functions, `PascalCase` classes, `UPPER_SNAKE_CASE` constants. In TypeScript, `PascalCase.tsx` components and `camelCase.ts` utilities.
 - On a fix attempt, fix the root cause shown in the failure, not the symptom. Never weaken or delete tests to make them pass.
-- You may run code to check your work, but QA's run is the official verification.
+- You may run code to check your work, but QA's run is the official verification. To check, run only the test files for this task (the one-file command in `docs/ARCHITECTURE.md`); never run the full suite.
 - Do not commit.
 
 ## Return
 
-The files you changed (one line each), and anything that deviates from the task or the architecture.
+The files you changed (one line each), any environment variable you added, and anything that deviates from the task or the architecture.
