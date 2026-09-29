@@ -27,6 +27,7 @@ Requires Python 3.11+. Dev dependencies: `pip install -e ".[dev]"`.
 - `claude_tools` use Claude Code names: `Read`, `Write`, `Edit`, `Glob`, `Grep`, `Bash`.
 - `antigravity_tools` use Antigravity names: `view_file`, `write_to_file`, `replace_file_content`, `grep_search`, `list_dir`, `find_by_name`, `run_command`, `invoke_subagent`.
 - The orchestrator (`main_agent = true`) has no Claude tool list: in Claude Code it runs as the main session via `/orchestrate`.
+- `claude_model` (optional, sub-agents only) sets the Claude Code model: `inherit` (default), `opus`, `sonnet` or `haiku`. Antigravity agents always use `model: inherit`.
 - Antigravity enforces `tools` for both the orchestrator and sub-agents. This was checked live with CLI 1.2.12: tools outside the list could not be called. Built-in coordination tools such as `send_message` and `manage_task` stay available.
 
 ## Rules

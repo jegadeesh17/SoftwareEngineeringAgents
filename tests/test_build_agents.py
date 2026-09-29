@@ -205,6 +205,17 @@ def test_committed_generated_files_match_source(monkeypatch, tmp_path):
     assert build_agents.main(["--check"]) == 0
 
 
+def test_claude_model_sets_claude_frontmatter_but_antigravity_inherits(tmp_path):
+    make_source(tmp_path, QA_TOML + 'claude_model = "sonnet"\n', {"qa-tester": "# QA\n"})
+
+    assert build_agents.main([], root=tmp_path) == 0
+
+    claude = (tmp_path / ".claude" / "agents" / "qa-tester.md").read_text(encoding="utf-8")
+    agy = (tmp_path / ".agents" / "agents" / "qa-tester" / "agent.md").read_text(encoding="utf-8")
+    assert "\nmodel: sonnet\n" in claude
+    assert "\nmodel: inherit\n" in agy
+
+
 def test_team_roster_and_permissions():
     roles = {r.name: r for r in build_agents.load_roles(build_agents.REPO_ROOT / "agents")}
 
@@ -233,6 +244,10 @@ def test_team_roster_and_permissions():
          "role 'orchestrator': 'main_agent' must be true or false"),
         (QA_TOML.replace("[roles.qa-tester]", '[roles."QA Tester"]'), "QA Tester",
          "invalid role name 'QA Tester'"),
+        (QA_TOML + 'claude_model = "gpt-4"\n', "qa-tester",
+         "role 'qa-tester': 'claude_model' must be one of inherit, opus, sonnet, haiku"),
+        (ORCH_TOML + 'claude_model = "haiku"\n', "orchestrator",
+         "role 'orchestrator': 'claude_model' applies to sub-agents only"),
     ],
 )
 def test_wrongly_typed_fields_are_rejected(tmp_path, capsys, toml_text, prompt_name, message):

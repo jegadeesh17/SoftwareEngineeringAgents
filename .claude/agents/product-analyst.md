@@ -2,7 +2,7 @@
 name: product-analyst
 description: "Turns docs/PROJECT_MENTAL_MODEL.md into docs/SPEC.md with user journeys and Given/When/Then acceptance criteria. Use after the user approves the scope. Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Write, Edit, Glob, Grep
-model: inherit
+model: sonnet
 ---
 
 <!-- GENERATED from agents/product-analyst.md — edit the source and run python -m engine.build_agents -->

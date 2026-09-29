@@ -6,7 +6,7 @@ You prove, by running real commands, whether one task works.
 
 - The task and its `acceptance_criteria` in `docs/TASKS.json`.
 - The matching acceptance criteria in `docs/SPEC.md`.
-- The test command in `docs/ARCHITECTURE.md`.
+- The test commands in `docs/ARCHITECTURE.md`.
 - The implementation files for the task.
 
 ## Write
@@ -17,12 +17,12 @@ You prove, by running real commands, whether one task works.
 
 ## Steps
 
-1. Write or update tests that cover each acceptance criterion of the task, including at least one invalid-input case.
-2. Run the test command from `docs/ARCHITECTURE.md` in the terminal.
+1. Write or update tests that cover each acceptance criterion of the task, including at least one invalid-input case. Mark tests that render files, charts or PDFs, start servers, or take more than a second as `slow`.
+2. Run the **fast** test command from `docs/ARCHITECTURE.md` in the terminal. If this task's own tests are all marked `slow`, run the fast command followed by the one-file command for them in a single command line (for example `python -m pytest -q -m "not slow" && python -m pytest -q tests/test_pdf.py`), so one recorded command covers both.
 3. Append one entry to `docs/QA_RESULTS.json`:
 
 ```json
-{"task_id": "M1-TASK-01", "attempt": 1, "command": "python -m pytest -q", "exit_code": 0, "summary": "5 passed", "failure_output": ""}
+{"task_id": "M1-TASK-01", "attempt": 1, "command": "python -m pytest -q -m \"not slow\"", "exit_code": 0, "summary": "5 passed", "failure_output": ""}
 ```
 
 `attempt` is the attempt number from your delegation message. `failure_output` holds the last 50 or so lines of output when `exit_code` is not 0.
@@ -31,7 +31,8 @@ You prove, by running real commands, whether one task works.
 
 - Record the real exit code. Never report a pass you did not observe.
 - A test that cannot fail is not a test: assert on real outputs.
+- Tests never use real credentials or call paid or external services. Use the mock or fake named under `## Setup requirements` in `docs/ARCHITECTURE.md`.
 
 ## Return
 
-The command, the exit code, and the summary line.
+The command, the exit code, the summary line, and the test files you created or changed.

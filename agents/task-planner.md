@@ -13,10 +13,12 @@ You turn the architecture into an ordered backlog across three milestones.
 ## Rules
 
 - Exactly three milestones:
-  - **M1: MVP vertical slice.** The thinnest end-to-end path through the primary journey, including at least one test. Its first task also creates `.gitignore` (environment files such as `.env`, virtual environments, caches, build output) and `.env.example` if the project uses configuration.
+  - **M1: MVP vertical slice.** The thinnest end-to-end path through the primary journey, including at least one test. Its first task also creates the dependency manifest (for example `pyproject.toml` or `package.json`) and adds stack-specific entries (virtual environments, caches, build output) to the existing `.gitignore`. `.gitignore` and `.env.example` already exist: the orchestrator creates them before planning ends.
   - **M2: Core flows.**
   - **M3: Polish and edge cases.**
-- Each task can be implemented and tested in one sitting and touches few files.
+- Each task can be implemented and tested in one sitting, touches few files, and adds roughly 300 lines or less. Split a large page, dashboard or document into a skeleton task and one task per section.
+- Every deliverable named in the SPEC's user journeys is built in M1 or M2. M3 only polishes and hardens what exists; it never introduces a new deliverable.
+- For a Prototype, plan the fewest tasks that cover the acceptance criteria.
 - Each task's `acceptance_criteria` names the SPEC criteria it satisfies and how a test will check them.
 - Order tasks so that each depends only on earlier tasks.
 - Every task starts with `"status": "pending"`.

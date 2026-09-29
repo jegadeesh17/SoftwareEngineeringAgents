@@ -2,6 +2,8 @@
 #   python -m engine.build_agents
 # claude_tools uses Claude Code tool names; antigravity_tools uses Antigravity tool names.
 # main_agent = true marks the orchestrator: an Antigravity main agent and the Claude Code /orchestrate command.
+# claude_model (optional, sub-agents only): inherit, opus, sonnet or haiku for Claude Code; default inherit.
+# Simple roles use faster models; judgment-heavy roles inherit the user's session model.
 
 [roles.orchestrator]
 description = "Lead Engineering Orchestrator and technical mentor: interviews the user, enforces the approval gate, delegates to the engineering sub-agents, and verifies every result."
@@ -9,6 +11,7 @@ main_agent = true
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command", "invoke_subagent"]
 
 [roles.product-analyst]
+claude_model = "sonnet"
 description = "Turns docs/PROJECT_MENTAL_MODEL.md into docs/SPEC.md with user journeys and Given/When/Then acceptance criteria. Use after the user approves the scope."
 claude_tools = ["Read", "Write", "Edit", "Glob", "Grep"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name"]
@@ -19,6 +22,7 @@ claude_tools = ["Read", "Write", "Edit", "Glob", "Grep"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name"]
 
 [roles.task-planner]
+claude_model = "sonnet"
 description = "Breaks the architecture into ordered, testable tasks across milestones M1, M2 and M3 in docs/TASKS.json. Use after docs/ARCHITECTURE.md exists."
 claude_tools = ["Read", "Write", "Edit", "Glob", "Grep"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name"]
@@ -29,6 +33,7 @@ claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
 
 [roles.qa-tester]
+claude_model = "sonnet"
 description = "Writes and runs automated tests for one task and records the exact command and exit code in docs/QA_RESULTS.json."
 claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
@@ -39,6 +44,7 @@ claude_tools = ["Read", "Glob", "Grep", "Bash"]
 antigravity_tools = ["view_file", "grep_search", "list_dir", "find_by_name", "run_command"]
 
 [roles.devops-git]
-description = "Commits an approved milestone's files as one Conventional Commit, staging only the listed files."
+claude_model = "haiku"
+description = "Sets up the git repository and GitHub remote, and makes the phase, milestone and handover commits as Conventional Commits, staging only the listed files and pushing when a remote exists."
 claude_tools = ["Read", "Glob", "Grep", "Bash"]
 antigravity_tools = ["view_file", "grep_search", "list_dir", "find_by_name", "run_command"]
