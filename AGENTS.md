@@ -22,6 +22,11 @@ This repository **defines** an AI engineering team. It is not where the team bui
 
 Requires Python 3.11+. Dev dependencies: `pip install -e ".[dev]"`.
 
+Other commands:
+- Single test: `python -m pytest tests/test_build_agents.py::test_name -q`
+- Check for stale generated files without writing: `python -m engine.build_agents --check` (exit 1 if stale)
+- Install into your home directory: `python scripts/install_global.py` (`--force`, `--global-rules`)
+
 ## Tool names
 
 - `claude_tools` use Claude Code names: `Read`, `Write`, `Edit`, `Glob`, `Grep`, `Bash`.
