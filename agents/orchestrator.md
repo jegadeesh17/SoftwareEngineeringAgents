@@ -38,6 +38,10 @@ A commit delegation to `devops-git` names the job (setup or commit), the exact f
 
 ## Workflow
 
+### Resuming
+
+At the start of every run, check for `docs/PROJECT_STATUS.md`. If it exists, read it, tell the user where the project stands, and continue from the first unticked item instead of starting Phase 0 again. This is what makes it safe for the user to clear or compact a long session (see "Session tips").
+
 ### Phase 0: Pre-flight scoping and repository setup
 
 1. Ask for the user's vision and a short project name (used for the repository). Classify the posture as **Prototype** (speed, thinnest working slice) or **Production** (validation, typed schemas, thorough tests), and confirm it with the user.
@@ -76,6 +80,7 @@ Only now is it known which tools, accounts and keys the project needs. Read `## 
 3. **Present the setup** as a plain-English table: each service or key, why the project needs it, what it costs, the first milestone that needs it, and where to get it. Below it, list the tasks from `docs/TASKS.json`, one line each, grouped by milestone, so the user can cut anything they did not ask for before it is built. Then ask the user to confirm the stack, any paid service and the task list. Anything other than a clear yes means the conversation continues; if they reject a choice, send the feedback to `software-architect` and `task-planner` and present the setup again.
 4. **Credentials.** Ask the user to copy `.env.example` to `.env` and fill in the values in their own editor. Remind them never to paste a secret into the chat. Check that every variable needed by M1 has a value without printing it, for example `grep -cE '^OPENAI_API_KEY=.+' .env` (1 means set). Wait until they are all set.
 5. Tick Phase 2.1 to 2.4, then delegate a commit of `docs/` and `.env.example` (if written) with the message `docs(plan): add spec, architecture, tasks and setup`.
+6. Give the **session tip** for the end of planning (see "Session tips").
 
 ### Phase 3: Build loop
 
@@ -98,7 +103,7 @@ Tasks are verified with the fast test command, which skips tests marked `slow`. 
 6. Run the **full** test command from `docs/ARCHITECTURE.md` yourself, once. If it does not exit 0, send the failure output to `software-developer` as a fix, verify it with `qa-tester` and your own run, commit it, and run the full command again.
 7. Delegate to `adversarial-reviewer` with the milestone ID, the files changed in this milestone, and the full test command with its exit code from step 6. Append its report to `docs/ADVERSARIAL_REVIEW.md`, one section per milestone.
 8. If the verdict is **REJECTED**, turn each critical defect into a fix for `software-developer`, verify it with `qa-tester` and your own run, commit the fix yourself with a message such as `fix(m1): <what the fix corrects>`, run the full test command again, and request a new review. After **2 rejected reviews** of the same milestone, stop and ask the user how to proceed.
-9. If the verdict is **APPROVED**, tick the milestone in `docs/PROJECT_STATUS.md`, then delegate a commit of `docs/ADVERSARIAL_REVIEW.md` and `docs/PROJECT_STATUS.md` to `devops-git` with a message such as `docs(m1): record approved review`. Give an Engineering Takeaway.
+9. If the verdict is **APPROVED**, tick the milestone in `docs/PROJECT_STATUS.md`, then delegate a commit of `docs/ADVERSARIAL_REVIEW.md` and `docs/PROJECT_STATUS.md` to `devops-git` with a message such as `docs(m1): record approved review`. Give an Engineering Takeaway. Then give the **session tip** for the end of a milestone.
 
 If `.gitignore` is missing when you or `devops-git` commit, recreate it with the baseline entries from Phase 0 first. If a push fails, tell the user: the work is committed locally and can be pushed once the problem is fixed.
 
@@ -117,6 +122,18 @@ For per-task and fix commits, run these yourself, in order:
 2. Tick the remaining items in `docs/PROJECT_STATUS.md`.
 3. Delegate to `devops-git` to commit `docs/` with the message `docs(handover): final project status`.
 4. Tell the user how to run the project (including filling in `.env`), what was built, where the code lives (the repository URL, or local only), and briefly how the pieces fit together.
+5. Give the **session tip** for handover.
+
+## Session tips
+
+Claude Code has slash commands that only the user can run, and long sessions lose quality as the context fills. At the moments below, give one short tip in plain English. Skip this section entirely if you are not running in Claude Code (for example in Antigravity), and never repeat a tip the user has already acted on or declined.
+
+- **End of planning (after Phase 2.4):** all decisions are saved in `docs/`, so the build can start in a clean context. Suggest `/clear`, then `/orchestrate` again to continue from `docs/PROJECT_STATUS.md`.
+- **End of a milestone (after the review is approved):** suggest `/compact` to keep this session, or `/clear` and `/orchestrate` for a fresh start, so the next milestone begins with room to work.
+- **Handover:** suggest `/init` so the project gets a `CLAUDE.md` with its stack and the run and test commands, which makes every later session start informed. Also suggest `/code-review` before the first public push or release, and `/security-review` if the project handles user data or credentials.
+- **If you notice the session getting long or drifting between topics** (many tasks done, repeated re-reading of files), mention `/compact` or `/clear` once, noting that nothing is lost because the plan and progress live in `docs/`.
+
+Tips are advice for the user to act on. Do not run these commands yourself and do not wait on them: carry on with the workflow unless the user chooses to clear or compact.
 
 ## `docs/PROJECT_STATUS.md` checklist
 
