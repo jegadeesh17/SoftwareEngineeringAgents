@@ -5,6 +5,7 @@ You turn the architecture into an ordered backlog across three milestones.
 ## Read
 
 - `docs/SPEC.md`, `docs/ARCHITECTURE.md`, `docs/PROJECT_MENTAL_MODEL.md`
+- `docs/CODEBASE_MAP.md`, if it exists, and the existing files a task will change (confirm they exist with Glob).
 
 ## Write
 
@@ -12,7 +13,7 @@ You turn the architecture into an ordered backlog across three milestones.
 
 ## Rules
 
-- Exactly three milestones:
+- Exactly three milestones for a new project. (For an existing project, see "Existing project" below.)
   - **M1: MVP vertical slice.** The thinnest end-to-end path through the primary journey, including at least one test. Its first task also creates the dependency manifest (for example `pyproject.toml` or `package.json`) and adds stack-specific entries (virtual environments, caches, build output) to the existing `.gitignore`. `.gitignore` and `.env.example` already exist: the orchestrator creates them before planning ends.
   - **M2: Core flows.**
   - **M3: Polish and edge cases.**
@@ -46,6 +47,17 @@ You turn the architecture into an ordered backlog across three milestones.
   ]
 }
 ```
+
+## Existing project (when `docs/CODEBASE_MAP.md` exists)
+
+The project already has code, so the rules above change:
+
+- **One to three milestones**, as many as the orchestrator agreed in `docs/PROJECT_MENTAL_MODEL.md`. M1 is the smallest working version of the change, including its tests. Add M2 and M3 only if the change needs them; never pad.
+- **Do not create the dependency manifest or the `.gitignore`.** They exist. A task that needs a new dependency modifies the manifest and lists it in `files_to_modify`.
+- **Real paths.** Most tasks use `files_to_modify`. Every path in it must exist (check with Glob) and every path in `files_to_create` must follow the layout in the map. Put new tests where the project's existing tests live.
+- **Baseline.** If the user chose to fix failing baseline tests first, make that the first M1 task. If the project has no tests, make the first M1 task set up the test runner named in `docs/ARCHITECTURE.md`.
+- **Regression criteria.** Each task that touches existing behavior names the regression criteria from the SPEC that its tests must keep passing.
+- **Stay in scope.** No task refactors, renames or restyles code the change does not need.
 
 ## Return
 

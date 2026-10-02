@@ -220,15 +220,33 @@ def test_team_roster_and_permissions():
     roles = {r.name: r for r in build_agents.load_roles(build_agents.REPO_ROOT / "agents")}
 
     assert set(roles) == {
-        "orchestrator", "product-analyst", "software-architect", "task-planner",
+        "orchestrator", "codebase-analyst", "product-analyst", "software-architect", "task-planner",
         "software-developer", "qa-tester", "adversarial-reviewer", "devops-git",
     }
     assert [n for n, r in roles.items() if r.main_agent] == ["orchestrator"]
+    # The analyst has to run the project's tests to record a baseline
+    assert "Bash" in roles["codebase-analyst"].claude_tools
+    assert "run_command" in roles["codebase-analyst"].antigravity_tools
     # Without invoke_subagent the Antigravity orchestrator cannot delegate at all
     assert "invoke_subagent" in roles["orchestrator"].antigravity_tools
     # The reviewer must not be able to change the code it judges
     assert not {"Write", "Edit"} & set(roles["adversarial-reviewer"].claude_tools)
     assert not {"write_to_file", "replace_file_content"} & set(roles["adversarial-reviewer"].antigravity_tools)
+
+
+def test_roles_that_work_on_existing_code_read_the_codebase_map():
+    # docs/CODEBASE_MAP.md is the hand-off for existing projects: its writer, its readers and
+    # the orchestrator that delegates to them must all name it, or the hand-off breaks silently
+    roles = {r.name: r for r in build_agents.load_roles(build_agents.REPO_ROOT / "agents")}
+    users = (
+        "orchestrator", "codebase-analyst", "product-analyst", "software-architect",
+        "task-planner", "software-developer", "qa-tester", "adversarial-reviewer",
+    )
+
+    for name in users:
+        assert "docs/CODEBASE_MAP.md" in roles[name].body, name
+    assert "codebase-analyst" in roles["orchestrator"].body
+    assert "## Job: branch" in roles["devops-git"].body
 
 
 @pytest.mark.parametrize(

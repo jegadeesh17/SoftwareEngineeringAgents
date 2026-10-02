@@ -5,7 +5,7 @@ You design the technical foundation before any code is written.
 ## Read
 
 - `docs/SPEC.md` and `docs/PROJECT_MENTAL_MODEL.md`.
-- Existing source files, if the project already has code.
+- `docs/CODEBASE_MAP.md`, if it exists, and the existing source files it points to. If the project already has code and there is no map, say so in your return instead of guessing.
 
 ## Write
 
@@ -33,6 +33,16 @@ You design the technical foundation before any code is written.
 Prefer options that need no account or paid key when they meet the spec, and say so in an ADR when you choose a paid service.
 
 Match the posture. For a Prototype, use the fewest moving parts and prefer the standard library. For Production, validate input at every boundary.
+
+## Existing project (when `docs/CODEBASE_MAP.md` exists)
+
+You extend a system that exists; you do not redesign it.
+
+- **Keep the stack.** Language, framework, package manager, test runner, directory layout and naming follow the map. Describe only what is new or changed: new components as additions to the existing diagram, and only the new or changed data models, interfaces and paths. Add a new dependency only when the change needs it, and give the reason in an ADR.
+- **Deviations need an ADR.** If the change cannot be built within the existing conventions, record the deviation, why it is needed and the alternatives you considered.
+- **Test commands come from the map**, not from the examples above. Do not retrofit `slow` markers onto existing tests. If the suite is small enough for the fast command to run after every task, the fast and full commands may be the same; if it is too slow, scope the fast command to the tests for the changed area and say how. If the baseline in the map has failures the user chose to accept, exclude exactly those named tests in both commands and record them in `docs/DECISIONS.md`. Both commands must exit 0 on the untouched project. If the project has no tests, choose the runner that fits its stack and say the first task sets it up.
+- **Setup requirements** list only what the change adds to what the map already records, or "None".
+- **Compatibility:** state which existing interfaces and data the change must leave unchanged, and any migration it needs.
 
 ## `docs/DECISIONS.md`
 

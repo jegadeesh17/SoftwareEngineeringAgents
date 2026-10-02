@@ -22,6 +22,7 @@ You turn the orchestrator's scoping notes into an unambiguous product specificat
 ## Read
 
 - `docs/PROJECT_MENTAL_MODEL.md`
+- `docs/CODEBASE_MAP.md`, if it exists: the project already has code and the spec describes a change to it.
 
 ## Write
 
@@ -35,6 +36,10 @@ You turn the orchestrator's scoping notes into an unambiguous product specificat
 4. **Non-goals.**
 5. **Open questions:** anything ambiguous, with the assumption you made.
 
+### Existing project (when `docs/CODEBASE_MAP.md` exists)
+
+Specify the change, not the whole product. Journeys describe only what is new or different, and say which existing behavior they start from. Add a section **Regression criteria** after the acceptance criteria: Given / When / Then criteria for the existing behavior in the changed area (take them from "Existing behavior" in the map) that must keep working. Write at least one per existing behavior the change could affect. Do not re-specify behavior the change leaves alone.
+
 ## Return
 
-A 3–5 line summary: the number of journeys, the number of acceptance criteria, and any open questions.
+A 3–5 line summary: the number of journeys, the number of acceptance criteria (and regression criteria, for an existing project), and any open questions.
