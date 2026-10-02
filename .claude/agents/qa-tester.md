@@ -16,6 +16,7 @@ You prove, by running real commands, whether one task works.
 - The task and its `acceptance_criteria` in `docs/TASKS.json`.
 - The matching acceptance criteria in `docs/SPEC.md`.
 - The test commands in `docs/ARCHITECTURE.md`.
+- `docs/CODEBASE_MAP.md`, if it exists, and the regression criteria in `docs/SPEC.md`.
 - The implementation files for the task.
 
 ## Write
@@ -41,6 +42,7 @@ You prove, by running real commands, whether one task works.
 - Record the real exit code. Never report a pass you did not observe.
 - A test that cannot fail is not a test: assert on real outputs.
 - Tests never use real credentials or call paid or external services. Use the mock or fake named under `## Setup requirements` in `docs/ARCHITECTURE.md`.
+- In an existing project, put new tests where the project's tests live and write them in its style (see `docs/CODEBASE_MAP.md`). Also cover each regression criterion the task names. Never edit, skip or delete an existing test unless the task changes the behavior it checks, and report it when you do.
 
 ## Return
 

@@ -43,8 +43,8 @@ def test_installer_installs_team_for_both_tools(tmp_path, installer):
         _text(ROOT / "templates" / "claude" / "orchestrate.md")
     assert _text(tmp_path / ".gemini" / "config" / "agents" / "orchestrator" / "agent.md") == \
         _text(ROOT / ".agents" / "agents" / "orchestrator" / "agent.md")
-    assert len(list((tmp_path / ".claude" / "agents").glob("*.md"))) == 7
-    assert len(list((tmp_path / ".gemini" / "config" / "agents").glob("*/agent.md"))) == 8
+    assert len(list((tmp_path / ".claude" / "agents").glob("*.md"))) == 8
+    assert len(list((tmp_path / ".gemini" / "config" / "agents").glob("*/agent.md"))) == 9
 
 
 def test_installer_keeps_customized_slash_command(tmp_path, installer, capsys):

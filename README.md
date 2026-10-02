@@ -20,6 +20,7 @@ AI coding agents tend to fail in predictable ways. Each one has a specific guard
 | Nobody checks the work | **Adversarial review.** A read-only reviewer audits every milestone and returns APPROVED or REJECTED. |
 | Agents can do too much | **Least privilege.** Each role gets only the tools it needs: planners have no shell, and the reviewer cannot edit files. |
 | Context is lost between sessions | **Files are the hand-off.** Eight living documents in `docs/` hold the plan, decisions, test results and status, so any agent (or you) can resume. |
+| Breaks code it didn't write | **Existing-project mode.** A codebase analyst maps the stack, conventions and a baseline test run first. Work happens on its own branch, and the reviewer checks for regressions against the starting commit. |
 
 ## How it works
 
@@ -28,6 +29,9 @@ You <──> ORCHESTRATOR (the only agent that talks to you)
           1. Interviews you: vision, project name, prototype vs production
           2. Sets up the repo first: new GitHub repo, existing URL, or local only
           │     └─> devops-git ────────> git init, remote, first commit
+          │         (existing code: a working branch instead)
+          │     └─> codebase-analyst ──> docs/CODEBASE_MAP.md + baseline test run
+          │         (existing code only)
           3. Interviews you: UX, errors, non-goals
           4. STOPS: "Do you approve this scope?"  <- nothing is built without your yes
           │
@@ -54,13 +58,14 @@ You <──> ORCHESTRATOR (the only agent that talks to you)
 | Agent | Produces | Can change files? |
 |---|---|---|
 | Orchestrator | the interview, approvals, setup, status tracking | docs, `.gitignore` and `.env.example` only (by instruction); runs the tests and makes the per-task commits |
+| Codebase Analyst | `docs/CODEBASE_MAP.md` (existing projects only) | docs only, and can run the project's tests |
 | Product Analyst | `docs/SPEC.md` | docs only |
 | Software Architect | `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` | docs only |
 | Task Planner | `docs/TASKS.json` | docs only |
 | Software Developer | the code | yes, and can run commands |
 | QA Tester | tests and `docs/QA_RESULTS.json` | tests and docs, and can run commands |
 | Adversarial Reviewer | APPROVED/REJECTED verdict | **no**: read-only, can run tests |
-| DevOps & Git | the repo and remote, phase and milestone commits | no: sets up the repo, stages, commits and pushes only |
+| DevOps & Git | the repo, remote and working branch, phase and milestone commits | no: sets up the repo, stages, commits and pushes only |
 
 ## Install
 
@@ -73,9 +78,9 @@ python scripts/install_global.py
 ```
 
 This installs:
-- `~/.claude/agents/*.md`: the 7 Claude Code sub-agents.
+- `~/.claude/agents/*.md`: the 8 Claude Code sub-agents.
 - `~/.claude/commands/orchestrate.md`: the `/orchestrate` command.
-- `~/.gemini/config/agents/*/agent.md`: the orchestrator and 7 sub-agents for Antigravity.
+- `~/.gemini/config/agents/*/agent.md`: the orchestrator and 8 sub-agents for Antigravity.
 
 The installer records what it wrote in `~/.se-agents/installed.json`. Re-running it after `git pull` updates files it installed before and keeps any you've edited. It exits with an error if it had to skip a file.
 
@@ -85,14 +90,16 @@ Options:
 
 ## Use
 
-Open an empty folder for your new project, then:
+Open an empty folder for a new project, or the folder of an existing one, then:
 
 - **Claude Code:** run `claude` and type `/orchestrate`.
 - **Antigravity:** run `agy --agent orchestrator`, or pick `orchestrator` in `/agents`.
 
+**Existing project.** The orchestrator detects code in the folder and switches mode. It asks what you want to change (a feature, a fix or a refactor) instead of for a product vision, and it won't start with uncommitted changes in the tree. It creates a working branch and never commits to `main`. The codebase analyst then maps the stack, conventions and a baseline test run, and the team follows the project's own style and test runner. If the baseline is red, the orchestrator asks whether to fix it first or accept the named failures. It plans one to three milestones sized to the change, and at handover it points you to the branch to open a pull request from.
+
 The orchestrator asks where the code should live (a new GitHub repository needs the [GitHub CLI](https://cli.github.com/) logged in with `gh auth login`). After the plan is approved, it tells you which accounts and API keys the project needs; you put them in `.env` yourself and never paste them into the chat.
 
-At the end you have working code, passing tests, one git commit per verified task (pushed to GitHub if you chose it), and eight documents in `docs/` explaining what was built and why.
+At the end you have working code, passing tests, one git commit per verified task (pushed to GitHub if you chose it), and eight documents in `docs/` explaining what was built and why (nine for an existing project, which adds the codebase map).
 
 ## Engineering decisions
 
@@ -118,6 +125,7 @@ This is a personal project, open-sourced so you can build your own team on it. F
 
 - In Claude Code, sub-agents cannot start other sub-agents, so the orchestrator is your main session. It follows the process because its instructions say so, and you can talk it out of it.
 - "Planning agents only write to `docs/`" is an instruction, not a hard limit. Those agents have no shell access.
+- Existing-project mode is prompt-level and has not been exercised against a real project yet. It never touches a `docs/` file you already have under one of the team's names: it asks you to move it first.
 - Antigravity's custom-agent format is new. If it changes, only `engine/build_agents.py` needs updating.
 
 ## License

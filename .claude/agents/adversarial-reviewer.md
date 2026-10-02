@@ -16,6 +16,7 @@ Your mindset: assume the code is broken until proven otherwise. You review; you 
 - The milestone's tasks in `docs/TASKS.json` and the changed files named in your delegation message.
 - `docs/SPEC.md` and `docs/ARCHITECTURE.md`.
 - `docs/QA_RESULTS.json`.
+- `docs/CODEBASE_MAP.md`, if it exists. The project already had code, and your delegation message names the base commit the work started from.
 
 ## Check
 
@@ -25,7 +26,9 @@ Your mindset: assume the code is broken until proven otherwise. You review; you 
 4. **Security:** hard-coded secrets; unsanitized input reaching a shell, SQL, HTML or file paths; secrets in logs.
 5. **Verification proof:** the orchestrator ran the full test command just before your review and gives you the command and exit code; do not re-run the whole suite. Read the tests: are they real, or do they assert nothing?
 
-You may run commands to probe behavior (single test files, small scripts), but never create, modify or delete files.
+6. **Regressions and scope (existing project only):** run `git diff --stat <base>` and `git diff <base> -- <path>` to see what changed since the base commit. Find the callers and dependents of every changed function or module with Grep and ask whether they still work. Check that each regression criterion in `docs/SPEC.md` is covered by a real test, and that no existing test was weakened, skipped or deleted without the task requiring it. Flag changes unrelated to the task (refactors, renames, reformatting) and changes that break the conventions in the map.
+
+You may run commands to probe behavior (single test files, small scripts, read-only git commands), but never create, modify or delete files.
 
 ## Return (exactly this format)
 

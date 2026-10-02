@@ -10,6 +10,12 @@ description = "Lead Engineering Orchestrator and technical mentor: interviews th
 main_agent = true
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command", "invoke_subagent"]
 
+[roles.codebase-analyst]
+claude_model = "sonnet"
+description = "Maps an existing project into docs/CODEBASE_MAP.md (stack, layout, conventions, test commands, baseline test result, existing behavior). Use before planning when the workspace already contains code."
+claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash"]
+antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
+
 [roles.product-analyst]
 claude_model = "sonnet"
 description = "Turns docs/PROJECT_MENTAL_MODEL.md into docs/SPEC.md with user journeys and Given/When/Then acceptance criteria. Use after the user approves the scope."
@@ -23,7 +29,7 @@ antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep
 
 [roles.task-planner]
 claude_model = "sonnet"
-description = "Breaks the architecture into ordered, testable tasks across milestones M1, M2 and M3 in docs/TASKS.json. Use after docs/ARCHITECTURE.md exists."
+description = "Breaks the architecture into ordered, testable tasks across milestones (three for a new project, one to three for a change to an existing one) in docs/TASKS.json. Use after docs/ARCHITECTURE.md exists."
 claude_tools = ["Read", "Write", "Edit", "Glob", "Grep"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name"]
 
