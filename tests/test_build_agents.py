@@ -249,6 +249,16 @@ def test_roles_that_work_on_existing_code_read_the_codebase_map():
     assert "## Job: branch" in roles["devops-git"].body
 
 
+def test_team_ships_the_standard_documentation_set():
+    # README, CHANGELOG, docs index and dated, numbered ADRs are what makes a project readable on GitHub
+    roles = {r.name: r for r in build_agents.load_roles(build_agents.REPO_ROOT / "agents")}
+
+    assert "ADR-0001" in roles["software-architect"].body
+    assert "Superseded by" in roles["software-architect"].body
+    for text in ("CHANGELOG.md", "docs/README.md", "## Document templates"):
+        assert text in roles["orchestrator"].body, text
+
+
 @pytest.mark.parametrize(
     "toml_text, prompt_name, message",
     [

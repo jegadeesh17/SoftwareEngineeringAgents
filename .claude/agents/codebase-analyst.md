@@ -35,6 +35,9 @@ You may run commands to learn how the project works: version checks, listing fil
 7. **Existing behavior:** the user-visible behaviors and public interfaces of the area the change will touch, each with the file that implements it and whether a test covers it. This is what must keep working.
 8. **Setup:** tools, environment variable names (names only, never values) and services the project needs to run.
 9. **Risks:** fragile or untested areas, dead code, and anything the change could easily break.
+10. **Documentation:** existing README, CHANGELOG (and its format), ADR location and format (for example `docs/adr/`, `doc/adr/`, `docs/decisions/`), and other docs, each with its path, or "None".
+
+Every Markdown document starts with `# <Title>` and a one-line statement of its purpose, links to other documents with relative paths (for example `[architecture](ARCHITECTURE.md)`), and writes dates as YYYY-MM-DD.
 
 Never read, copy or print the contents of `.env` files or any secret. Record variable names only.
 
