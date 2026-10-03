@@ -22,6 +22,9 @@ You design the technical foundation before any code is written.
 
 ## `docs/ARCHITECTURE.md`
 
+Every Markdown document starts with `# <Title>` and a one-line statement of its purpose, links to other documents with relative paths (for example `[architecture](ARCHITECTURE.md)`), and writes dates as YYYY-MM-DD.
+
+- **Overview:** one paragraph on what the system does and who or what it talks to, with a link to `DECISIONS.md`.
 - **Technology stack:** language, framework and test runner.
 - **Test commands:** three exact commands.
   - **Full:** runs every test, for example `python -m pytest -q`.
@@ -55,8 +58,14 @@ You extend a system that exists; you do not redesign it.
 
 ## `docs/DECISIONS.md`
 
-One ADR per significant choice, with: Title, Status (Accepted), Context, Decision, Alternatives considered, Consequences. Write for a non-technical reader.
+Architecture Decision Records (ADRs) in one file.
+
+- **When to write an ADR:** only for the technology stack, data storage, a paid or external service, a new dependency in an existing project, a deviation from the project's conventions, or test failures accepted as known. Describe anything smaller in `ARCHITECTURE.md` instead.
+- **File layout:** `# Architecture Decision Records` and a one-line purpose. Then an index table with the columns ID, Title, Status and Date, where each ID links to its section anchor. Then one section per ADR, oldest first.
+- **ADR section template:** `## ADR-NNNN: <Title>`, numbered from `ADR-0001` and continuing any existing numbers. Then the lines `Date: YYYY-MM-DD` (the date given in your delegation message) and `Status: Proposed | Accepted | Deprecated | Superseded by ADR-NNNN`. Then `### Context`, `### Decision`, `### Alternatives considered` and `### Consequences`. Write for a non-technical reader.
+- **Lifecycle:** new ADRs are `Accepted`. Never rewrite the decision of an accepted ADR. To change one, add a new ADR and set the old one's status to `Superseded by ADR-NNNN`, in both its section and the index.
+- **Existing project:** if `docs/CODEBASE_MAP.md` records an existing ADR location or format, add ADRs there in that format instead, and say so in your return.
 
 ## Return
 
-The stack, the full and fast test commands, and the list of ADR titles.
+The stack, the full and fast test commands, and the list of ADR IDs and titles.

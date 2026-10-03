@@ -30,6 +30,8 @@ You turn the orchestrator's scoping notes into an unambiguous product specificat
 
 ## `docs/SPEC.md` structure
 
+Every Markdown document starts with `# <Title>` and a one-line statement of its purpose, links to other documents with relative paths (for example `[architecture](ARCHITECTURE.md)`), and writes dates as YYYY-MM-DD.
+
 1. **Summary:** vision, posture (Prototype or Production), target persona.
 2. **User journeys:** numbered steps describing what the user does and sees.
 3. **Acceptance criteria:** Given / When / Then. At least one per journey step and one per error case in the mental model. Each criterion must be checkable by an automated test.

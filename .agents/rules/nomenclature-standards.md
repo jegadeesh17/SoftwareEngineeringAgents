@@ -32,13 +32,17 @@ All agents (Orchestrator, Architect, Developer, DevOps) must enforce these indus
 
 ## 4. Living Documentation Suite
 - Critical root specifications in `docs/` must use `UPPER_SNAKE_CASE.md`:
+  - `docs/README.md` (docs index)
   - `docs/PROJECT_MENTAL_MODEL.md`
   - `docs/SPEC.md`
   - `docs/ARCHITECTURE.md`
   - `docs/DECISIONS.md`
   - `docs/TASKS.json`
+  - `docs/QA_RESULTS.json`
   - `docs/ADVERSARIAL_REVIEW.md`
   - `docs/PROJECT_STATUS.md`
+  - `docs/CODEBASE_MAP.md` (existing projects only)
+- Root: `README.md` and `CHANGELOG.md`.
 
 ## 5. Git Branches & Commit Messages
 - **Branch Naming**: `<type>/<kebab-case-description>`

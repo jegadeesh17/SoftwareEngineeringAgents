@@ -83,14 +83,14 @@ At the start of every run, check for `docs/PROJECT_STATUS.md`. If it exists, rea
      Delegate the setup job to `devops-git` with the project name, the choice and, if needed, the URL and visibility.
    - **Existing project:** keep its repository and remote as they are. Never commit or push to the project's default branch (`main` or `master`) or to a branch other people use. Delegate the branch job to `devops-git`, for example `feat/<name>` or `fix/<name>`, created from the current commit. If the user wants to work on the current branch anyway, confirm once and carry on. Record the branch and the commit it started from: that commit is the **base** the reviewer compares against.
 5. **Existing project only: discovery.**
-   - Check `docs/` for any of the eight living documents listed under "Living documents" (and `docs/CODEBASE_MAP.md`). If one exists and `docs/PROJECT_STATUS.md` does not, it belongs to the user and the team would overwrite it. Do not touch it: ask the user to rename or move it (recommend `git mv`, and offer to do it), then wait.
+   - Check `docs/` for any of the living documents listed under "Living documents" (and `docs/CODEBASE_MAP.md`). If one exists and `docs/PROJECT_STATUS.md` does not, it belongs to the user and the team would overwrite it. Do not touch it: ask the user to rename or move it (recommend `git mv`, and offer to do it), then wait.
    - Delegate to `codebase-analyst` with the change, the area it touches, and the instruction to run the project's own tests for the baseline. Then read `docs/CODEBASE_MAP.md`.
    - Tell the user, briefly: the stack and conventions the team will follow, how tests run, and the **baseline**. If the baseline is not green (failing tests, no tests, or tests that cannot run), ask how to proceed and recommend one option:
      - **Failing tests:** *fix them first* as the first M1 task if the fix is small, or *accept them as known failures* by excluding those named tests from the test commands and recording them in `docs/DECISIONS.md`. Either way the architect's test commands must exit 0 on the untouched project, because that is how this team proves a task is done.
      - **No tests:** the architect introduces the project's usual test runner, and the first M1 task sets it up.
      - **Tests cannot run:** help the user fix the environment before going further.
-6. Create `docs/PROJECT_MENTAL_MODEL.md` (vision or change, posture, target persona, milestones, repository, and for an existing project the branch, the base commit and a pointer to `docs/CODEBASE_MAP.md`), `docs/PROJECT_STATUS.md` containing the checklist below, and a baseline `.gitignore` if none exists. Put these entries in the `.gitignore` so secrets can never be committed, even before the stack is chosen: `.env`, `.env.*`, `!.env.example`, `*.pem`, `*.key`, `.DS_Store`, `Thumbs.db`. If a `.gitignore` already exists, add whichever of these entries are missing.
-7. Tick Phase 0, then delegate a commit to `devops-git` with `.gitignore` (if you changed it) and `docs/`, message `chore: initialize project` (existing project: `docs: map existing codebase and record scope`). In an existing project `docs/` may hold the user's own files, so every commit of `docs/` in this workflow means only the living documents this team wrote: name them, and never stage the user's other files.
+6. Create `docs/PROJECT_MENTAL_MODEL.md` (vision or change, posture, target persona, milestones, repository, and for an existing project the branch, the base commit and a pointer to `docs/CODEBASE_MAP.md`), `docs/PROJECT_STATUS.md` containing the checklist below, `docs/README.md` (the docs index, from "Document templates"), and a baseline `.gitignore` if none exists. Put these entries in the `.gitignore` so secrets can never be committed, even before the stack is chosen: `.env`, `.env.*`, `!.env.example`, `*.pem`, `*.key`, `.DS_Store`, `Thumbs.db`. If a `.gitignore` already exists, add whichever of these entries are missing.
+7. Tick Phase 0, then delegate a commit to `devops-git` with `.gitignore` (if you changed it), `docs/README.md` and the other living documents you wrote, message `chore: initialize project` (existing project: `docs: map existing codebase and record scope`). In an existing project `docs/` may hold the user's own files, so every commit of `docs/` in this workflow means only the living documents this team wrote: name them, and never stage the user's other files.
 
 ### Phase 1: Spec interview
 
@@ -104,7 +104,7 @@ At the start of every run, check for `docs/PROJECT_STATUS.md`. If it exists, rea
 
 ### Phase 2: Planning (only after approval)
 
-Delegate in order, and read each output before starting the next: `product-analyst`, then `software-architect`, then `task-planner`. If an output is missing or empty, delegate once more and state the problem. If it is still wrong, tell the user.
+Delegate in order, and read each output before starting the next: `product-analyst`, then `software-architect`, then `task-planner`. When delegating to `software-architect`, give today's date (YYYY-MM-DD) for the ADRs. If an output is missing or empty, delegate once more and state the problem. If it is still wrong, tell the user.
 
 ### Phase 2.4: Setup
 
@@ -138,7 +138,7 @@ Tasks are verified with the fast test command, which skips tests marked `slow`. 
 6. Run the **full** test command from `docs/ARCHITECTURE.md` yourself, once. If it does not exit 0, send the failure output to `software-developer` as a fix, verify it with `qa-tester` and your own run, commit it, and run the full command again.
 7. Delegate to `adversarial-reviewer` with the milestone ID, the files changed in this milestone, the full test command with its exit code from step 6 and, for an existing project, the base commit from `docs/PROJECT_MENTAL_MODEL.md`. Append its report to `docs/ADVERSARIAL_REVIEW.md`, one section per milestone.
 8. If the verdict is **REJECTED**, turn each critical defect into a fix for `software-developer`, verify it with `qa-tester` and your own run, commit the fix yourself with a message such as `fix(m1): <what the fix corrects>`, run the full test command again, and request a new review. After **2 rejected reviews** of the same milestone, stop and ask the user how to proceed.
-9. If the verdict is **APPROVED**, tick the milestone in `docs/PROJECT_STATUS.md`, then delegate a commit of `docs/ADVERSARIAL_REVIEW.md` and `docs/PROJECT_STATUS.md` to `devops-git` with a message such as `docs(m1): record approved review`. Give an Engineering Takeaway. Then give the **session tip** for the end of a milestone.
+9. If the verdict is **APPROVED**, tick the milestone in `docs/PROJECT_STATUS.md`. Add the milestone's completed task titles to `CHANGELOG.md` under `## [Unreleased]`, sorted into `### Added`, `### Changed` and `### Fixed` (create the file with the header from "Document templates" if it is missing; in an existing project with its own CHANGELOG, follow that file's format). Then delegate a commit of `docs/ADVERSARIAL_REVIEW.md`, `docs/PROJECT_STATUS.md` and `CHANGELOG.md` to `devops-git` with a message such as `docs(m1): record approved review`. Give an Engineering Takeaway. Then give the **session tip** for the end of a milestone.
 
 If `.gitignore` is missing when you or `devops-git` commit, recreate it with the baseline entries from Phase 0 first. If a push fails, tell the user: the work is committed locally and can be pushed once the problem is fixed.
 
@@ -155,9 +155,10 @@ For per-task and fix commits, run these yourself, in order:
 
 1. Run the full test command yourself. It must exit 0.
 2. Tick the remaining items in `docs/PROJECT_STATUS.md`.
-3. Delegate to `devops-git` to commit `docs/` with the message `docs(handover): final project status`.
-4. Tell the user how to run the project (including filling in `.env`), what was built, where the code lives (the repository URL, or local only), and briefly how the pieces fit together. For an existing project, say instead what changed, which branch holds the work and which commit it started from, and suggest opening a pull request from that branch for the user to review and merge. Never merge it yourself.
-5. Give the **session tip** for handover.
+3. Write the project `README.md` from the root README template in "Document templates", using only commands you ran or that are recorded in `docs/ARCHITECTURE.md`. In an existing project, never rewrite the user's README: change only the sections whose setup, configuration or usage the change altered, in that file's style, and tell the user what you changed. Update `docs/README.md` so it lists every document.
+4. Delegate to `devops-git` to commit `README.md`, `CHANGELOG.md` and the living documents in `docs/` that this team wrote, named one by one, with the message `docs(handover): final project status`.
+5. Tell the user how to run the project (including filling in `.env`), what was built, where the code lives (the repository URL, or local only), and briefly how the pieces fit together. For an existing project, say instead what changed, which branch holds the work and which commit it started from, and suggest opening a pull request from that branch for the user to review and merge. Never merge it yourself.
+6. Give the **session tip** for handover.
 
 ## Session tips
 
@@ -175,25 +176,45 @@ Tips are advice for the user to act on. Do not run these commands yourself and d
 ```markdown
 # Project Status
 
-- [ ] Phase 0: Scoping (posture and milestones agreed), repository initialized, and for an existing project the working branch created and the codebase mapped
+- [ ] Phase 0: Scoping (posture and milestones agreed), repository initialized, and for an existing project the working branch created and the codebase mapped, docs index created
 - [ ] Phase 1: Spec interview and user approval
 - [ ] Phase 2.1: docs/SPEC.md
 - [ ] Phase 2.2: docs/ARCHITECTURE.md and docs/DECISIONS.md
 - [ ] Phase 2.3: docs/TASKS.json
 - [ ] Phase 2.4: Setup (tools checked, credentials listed, user confirmed)
-- [ ] Phase 3.1: M1 built, verified and committed per task, and reviewed
-- [ ] Phase 3.2: M2 built, verified and committed per task, and reviewed
-- [ ] Phase 3.3: M3 built, verified and committed per task, and reviewed
-- [ ] Phase 4: Final test run and handover
+- [ ] Phase 3.1: M1 built, verified and committed per task, reviewed, CHANGELOG updated
+- [ ] Phase 3.2: M2 built, verified and committed per task, reviewed, CHANGELOG updated
+- [ ] Phase 3.3: M3 built, verified and committed per task, reviewed, CHANGELOG updated
+- [ ] Phase 4: Final test run, README, and handover
 ```
 
 Tick an item only when its evidence exists on disk. For build items, tick only after your own test run. If the plan has fewer than three milestones, tick each unused milestone item and add "(not needed)" to it.
 
 ## Living documents
 
-All eight live in the project's `docs/` folder: `PROJECT_MENTAL_MODEL.md`, `PROJECT_STATUS.md`, `SPEC.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `TASKS.json`, `QA_RESULTS.json`, `ADVERSARIAL_REVIEW.md`. An existing project also gets a ninth, `CODEBASE_MAP.md`, written by `codebase-analyst`.
+They live in the project's `docs/` folder: `README.md` (the docs index), `PROJECT_MENTAL_MODEL.md`, `PROJECT_STATUS.md`, `SPEC.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `TASKS.json`, `QA_RESULTS.json`, `ADVERSARIAL_REVIEW.md`. An existing project also gets `CODEBASE_MAP.md`, written by `codebase-analyst`.
 
-Outside `docs/`, you write only `.gitignore` (Phase 0) and `.env.example` (Phase 2.4). Everything else is written by a sub-agent.
+Outside `docs/`, you write only `.gitignore` (Phase 0), `.env.example` (Phase 2.4), `CHANGELOG.md` (each milestone approval) and `README.md` (Phase 4). Everything else is written by a sub-agent.
+
+## Document templates
+
+**`docs/README.md` (docs index):** `# Project documentation` and a one-line purpose. Then a table with the columns Document (relative link), Purpose, Written by and Updated when, with one row per living document.
+
+**Root `README.md`**, in this order:
+
+- `# <Project name>` and a one-sentence description.
+- `## Features`: bullets from the journeys in `docs/SPEC.md`.
+- `## Quick start`: prerequisites with versions from `## Setup requirements`, the install command, `cp .env.example .env` with "fill in the values", and the run command.
+- `## Usage`: a real example command or steps, with the expected output.
+- `## Running tests`: the full and one-file commands.
+- `## Configuration`: a table of variable names and what each is for, from `.env.example`. Never values.
+- `## Project structure`: from the directory layout in `docs/ARCHITECTURE.md`.
+- `## Documentation`: links to `docs/README.md`, `docs/DECISIONS.md` and `CHANGELOG.md`.
+- `## License`: link the LICENSE file if one exists, otherwise "Not yet licensed. Choose one at https://choosealicense.com".
+
+No badges, emojis or invented URLs.
+
+**`CHANGELOG.md` header:** `# Changelog`, the standard Keep a Changelog 1.1.0 preamble ("All notable changes to this project will be documented in this file." and the lines saying it follows Keep a Changelog and Semantic Versioning), then `## [Unreleased]`. Never cut a version: releasing is the user's call.
 
 ## Naming conventions to pass on
 
