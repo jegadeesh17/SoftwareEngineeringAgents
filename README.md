@@ -68,17 +68,17 @@ You <──> ORCHESTRATOR (the only agent that talks to you)
 | Agent | Produces | Can change files? |
 |---|---|---|
 | Orchestrator | the interview, approvals, setup, status tracking | docs, `.gitignore` and `.env.example` only (by instruction); runs the tests and makes all the git commits |
-| Codebase Analyst | `docs/CODEBASE_MAP.md` (existing projects only) | docs only, and can run the project's tests |
-| Product Analyst | `docs/SPEC.md` | docs only |
-| Software Architect | `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` | docs only |
-| Task Planner | `docs/TASKS.json` | docs only |
-| Backend Developer | the non-UI code | yes, and can run commands |
-| Frontend Developer | the prototype and UI code (UI projects only) | yes, can run commands and use the Impeccable skill |
-| QA Tester | tests and `docs/QA_RESULTS.json` | tests and docs, and can run commands |
-| Adversarial Reviewer | APPROVED/REJECTED verdict | **no**: read-only, can run tests |
-| UI Reviewer | screenshots and an APPROVED/REJECTED verdict (UI projects only) | **no**: read-only, writes only screenshots under `.ui-review/` |
-| Platform Engineer | CI, container and deploy config, `docs/DEPLOYMENT.md` (deploy projects only) | yes, can run commands; never deploys |
-| Security Reviewer | APPROVED/REJECTED verdict on the design and on each milestone (sensitive-data projects only) | **no**: read-only |
+| CodebaseAnalyst | `docs/CODEBASE_MAP.md` (existing projects only) | docs only, and can run the project's tests |
+| ProductAnalyst | `docs/SPEC.md` | docs only |
+| SoftwareArchitect | `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` | docs only |
+| TaskPlanner | `docs/TASKS.json` | docs only |
+| BackendDeveloper | the non-UI code | yes, and can run commands |
+| FrontendDeveloper | the prototype and UI code (UI projects only) | yes, can run commands and use the Impeccable skill |
+| QaTester | tests and `docs/QA_RESULTS.json` | tests and docs, and can run commands |
+| AdversarialReviewer | APPROVED/REJECTED verdict | **no**: read-only, can run tests |
+| UiReviewer | screenshots and an APPROVED/REJECTED verdict (UI projects only) | **no**: read-only, writes only screenshots under `.ui-review/` |
+| PlatformEngineer | CI, container and deploy config, `docs/DEPLOYMENT.md` (deploy projects only) | yes, can run commands; never deploys |
+| SecurityReviewer | APPROVED/REJECTED verdict on the design and on each milestone (sensitive-data projects only) | **no**: read-only |
 
 ## Install
 

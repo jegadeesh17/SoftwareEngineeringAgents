@@ -46,7 +46,7 @@ def test_claude_agent_has_frontmatter_and_verbatim_body(tmp_path):
     assert text == (
         "---\n"
         "name: qa-tester\n"
-        'description: "Runs tests Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."\n'
+        'description: "QaTester: Runs tests Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."\n'
         "tools: Read, Bash\n"
         "model: inherit\n"
         "---\n\n"
@@ -64,7 +64,7 @@ def test_antigravity_agent_lists_tools_and_is_a_subagent(tmp_path):
     assert text == (
         "---\n"
         "name: qa-tester\n"
-        'description: "Runs tests Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."\n'
+        'description: "QaTester: Runs tests Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."\n'
         "tools:\n"
         "  - view_file\n"
         "  - run_command\n"
@@ -88,7 +88,7 @@ def test_orchestrator_is_antigravity_main_agent_and_claude_slash_command(tmp_pat
     command = (tmp_path / "templates" / "claude" / "orchestrate.md").read_text(encoding="utf-8")
     assert command == (
         "---\n"
-        'description: "Leads the team"\n'
+        'description: "Orchestrator: Leads the team"\n'
         "---\n\n"
         "<!-- GENERATED from agents/orchestrator.md — edit the source and run "
         "python -m engine.build_agents -->\n\n"
@@ -106,7 +106,7 @@ def test_description_with_quotes_and_colons_is_escaped(tmp_path):
     assert build_agents.main([], root=tmp_path) == 0
 
     text = (tmp_path / ".claude" / "agents" / "qa-tester.md").read_text(encoding="utf-8")
-    assert 'description: "Checks \\"edge\\" cases: all of them Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."\n' in text
+    assert 'description: "QaTester: Checks \\"edge\\" cases: all of them Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."\n' in text
 
 
 def test_crlf_unicode_source_produces_lf_utf8_output(tmp_path):
@@ -341,11 +341,11 @@ def test_sub_agent_descriptions_are_scoped_to_the_orchestrator(tmp_path):
 
     assert build_agents.main([], root=tmp_path) == 0
 
-    scoped = 'description: "Runs tests Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."\n'
+    scoped = 'description: "QaTester: Runs tests Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."\n'
     assert scoped in (tmp_path / ".claude" / "agents" / "qa-tester.md").read_text(encoding="utf-8")
     assert scoped in (tmp_path / ".agents" / "agents" / "qa-tester" / "agent.md").read_text(encoding="utf-8")
     lead = (tmp_path / ".agents" / "agents" / "orchestrator" / "agent.md").read_text(encoding="utf-8")
-    assert 'description: "Leads the team"\n' in lead
+    assert 'description: "Orchestrator: Leads the team"\n' in lead
 
 
 def test_bom_in_manifest_and_prompt_is_ignored(tmp_path):
@@ -459,3 +459,18 @@ def test_orchestrator_prompt_stays_within_its_line_budget():
     roles = _real_roles()
 
     assert len(roles["orchestrator"].body.splitlines()) <= 300
+
+
+def test_agents_show_their_pascal_case_display_name():
+    # `name:` must stay a kebab-case id, so the display name leads the description and the prompt title
+    roles = _real_roles()
+    outputs = build_agents.build_outputs(list(roles.values()))
+
+    for name, role in roles.items():
+        display = build_agents.display_name(name)
+        agy = outputs[build_agents.ANTIGRAVITY_AGENTS_DIR / name / "agent.md"]
+        assert f"name: {name}\n" in agy, name
+        assert f'description: "{display}: ' in agy, name
+        if not role.main_agent:
+            assert role.body.startswith(f"# {display}\n"), name
+            assert f'description: "{display}: ' in outputs[build_agents.CLAUDE_AGENTS_DIR / f"{name}.md"], name

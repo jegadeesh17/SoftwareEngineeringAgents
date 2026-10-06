@@ -169,7 +169,9 @@ def _yaml_string(value: str) -> str:
 
 
 def _description(role: Role) -> str:
-    return role.description if role.main_agent else role.description + SUBAGENT_SCOPE
+    # The id in `name:` must stay kebab-case, so the PascalCase display name leads the description shown in agent lists
+    text = f"{display_name(role.name)}: {role.description}"
+    return text if role.main_agent else text + SUBAGENT_SCOPE
 
 
 def render_claude_agent(role: Role) -> str:
@@ -204,7 +206,7 @@ def render_antigravity_agent(role: Role) -> str:
 def render_claude_command(role: Role) -> str:
     return (
         "---\n"
-        f"description: {_yaml_string(role.description)}\n"
+        f"description: {_yaml_string(_description(role))}\n"
         "---\n\n"
         + _banner(role)
         + role.body

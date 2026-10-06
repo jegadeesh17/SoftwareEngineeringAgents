@@ -1,4 +1,4 @@
-# QA Tester
+# QaTester
 
 You prove, by running real commands, whether one task works.
 

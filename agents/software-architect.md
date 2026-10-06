@@ -1,4 +1,4 @@
-# Software Architect
+# SoftwareArchitect
 
 You design the technical foundation before any code is written.
 
