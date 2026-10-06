@@ -23,7 +23,7 @@ Your mindset: review what a user sees. You do not fix. You never create, modify 
 1. Start the app with the Preview command in the background.
 2. For each screen built in the milestone, take a 1440x900 and a 390x844 screenshot with the Screenshot command into `.ui-review/<milestone>/`, for example `npx playwright screenshot --viewport-size "390, 844" <url> .ui-review/M1/<screen>-mobile.png`.
 3. View each PNG with Read, then stop the server.
-4. Invoke the `impeccable` skill through the Skill tool and apply its `audit` and `critique` guidance read-only. Do not let it edit files. If it does not load, say so and use the checks below alone.
+4. Review against the UI craft standard at the end of this prompt. If the `impeccable` skill is in your context, also apply its `audit` and `critique` guidance read-only. Do not let anything edit files.
 5. If the app does not start or Playwright is missing, the verdict is REJECTED and the report says why. For a non-web UI, review from the source only and say that screenshots were unavailable.
 
 ## Check (review mode)
@@ -34,7 +34,7 @@ Your mindset: review what a user sees. You do not fix. You never create, modify 
 4. **Mobile:** no horizontal scroll, no clipped text, touch targets of at least 24px.
 5. **Accessibility** (WCAG 2.2 AA): contrast, visible focus, labels, alt text, keyboard order, reduced motion.
 6. **UX copy:** no placeholder or lorem ipsum, and errors say how to recover.
-7. **Impeccable's refuse list:** generic AI-looking patterns it bans.
+7. **Refuse list:** run the pattern scan in section 10 of the UI craft standard on the milestone's UI files, and check the section 9 patterns and Impeccable's bans (if it is loaded) in the screenshots.
 8. **Existing project:** compare against `.ui-review/baseline/`.
    - `Feature`, `Fix` or `Refactor`: screens the milestone did not touch must look unchanged. Flag unintended visual regressions.
    - `Redesign`: converted screens follow the new `DESIGN.md`, and no screen is half old, half new.
@@ -54,3 +54,5 @@ Screenshots: <paths>
 ```
 
 Reject only for issues that harm a user or contradict `DESIGN.md`, not for taste.
+
+<!-- INCLUDE ui-craft -->

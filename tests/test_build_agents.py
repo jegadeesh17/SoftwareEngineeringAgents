@@ -142,6 +142,7 @@ def test_crlf_unicode_source_produces_lf_utf8_output(tmp_path):
         (ORCH_TOML + 'slots = ["pipeline"]\n', {"orchestrator": ORCH_BODY}, "apply to sub-agents only"),
         (ORCH_TOML + 'runs_for = "ui"\n', {"orchestrator": ORCH_BODY}, "apply to sub-agents only"),
         (ORCH_TOML, {"orchestrator": "# Lead\n"}, "must contain <!-- TEAM_TABLE --> exactly once"),
+        (QA_TOML, {"qa-tester": "<!-- INCLUDE nope -->"}, "include 'nope' not found in agents/shared/"),
     ],
 )
 def test_invalid_source_is_rejected_and_nothing_written(tmp_path, capsys, toml_text, prompts, message):
@@ -232,6 +233,31 @@ def test_claude_model_sets_claude_frontmatter_but_antigravity_inherits(tmp_path)
     assert "\nmodel: inherit\n" in agy
 
 
+def test_shared_fragment_is_inlined_where_included(tmp_path):
+    make_source(tmp_path, QA_TOML, {"qa-tester": "# QA\n\n<!-- INCLUDE rules -->\n"})
+    (tmp_path / "agents" / "shared").mkdir()
+    (tmp_path / "agents" / "shared" / "rules.md").write_text("## Rules\n\nBe kind.\n", encoding="utf-8")
+
+    assert build_agents.main([], root=tmp_path) == 0
+
+    for path in (tmp_path / ".claude" / "agents" / "qa-tester.md", tmp_path / ".agents" / "agents" / "qa-tester" / "agent.md"):
+        text = path.read_text(encoding="utf-8")
+        assert text.endswith("# QA\n\n## Rules\n\nBe kind.\n")
+        assert "INCLUDE" not in text
+
+
+def test_claude_skills_are_preloaded_in_claude_frontmatter_only(tmp_path):
+    toml_text = QA_TOML + 'claude_skills = ["impeccable:impeccable", "frontend-design:frontend-design"]\n'
+    make_source(tmp_path, toml_text, {"qa-tester": "# QA\n"})
+
+    assert build_agents.main([], root=tmp_path) == 0
+
+    claude = (tmp_path / ".claude" / "agents" / "qa-tester.md").read_text(encoding="utf-8")
+    agy = (tmp_path / ".agents" / "agents" / "qa-tester" / "agent.md").read_text(encoding="utf-8")
+    assert "\nmodel: inherit\nskills: impeccable:impeccable, frontend-design:frontend-design\n---\n" in claude
+    assert "skills:" not in agy
+
+
 def test_team_roster_and_permissions():
     roles = {r.name: r for r in build_agents.load_roles(build_agents.REPO_ROOT / "agents")}
 
@@ -301,6 +327,10 @@ def test_team_ships_the_standard_documentation_set():
          "role 'qa-tester': 'claude_model' must be one of inherit, opus, sonnet, haiku"),
         (ORCH_TOML + 'claude_model = "haiku"\n', "orchestrator",
          "role 'orchestrator': 'claude_model' applies to sub-agents only"),
+        (QA_TOML + 'claude_skills = []\n', "qa-tester",
+         "role 'qa-tester': 'claude_skills' must be a non-empty list of strings"),
+        (ORCH_TOML + 'claude_skills = ["x"]\n', "orchestrator",
+         "role 'orchestrator': 'claude_skills' applies to sub-agents only"),
     ],
 )
 def test_wrongly_typed_fields_are_rejected(tmp_path, capsys, toml_text, prompt_name, message):
@@ -474,3 +504,18 @@ def test_agents_show_their_pascal_case_display_name():
         if not role.main_agent:
             assert role.body.startswith(f"# {display}\n"), name
             assert f'description: "{display}: ' in outputs[build_agents.CLAUDE_AGENTS_DIR / f"{name}.md"], name
+
+
+def test_ui_roles_carry_the_craft_standard_and_preload_impeccable():
+    # The standard is inlined so the UI roles work with no plugin installed; Impeccable is a preloaded extra
+    roles = _real_roles()
+
+    for name, role in roles.items():
+        if name in ("frontend-developer", "ui-reviewer"):
+            assert "## UI craft standard" in role.body, name
+            assert "Refuse list" in role.body, name
+            assert "git grep -n -I --untracked" in role.body, name
+            assert "<!-- INCLUDE" not in role.body, name
+            assert role.claude_skills == ["impeccable:impeccable"], name
+        else:
+            assert "## UI craft standard" not in role.body, name

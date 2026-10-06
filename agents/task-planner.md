@@ -23,7 +23,7 @@ You turn the architecture into an ordered backlog across three milestones.
 - For a Prototype, plan the fewest tasks that cover the acceptance criteria.
 - Every task has an `"owner"`: `"frontend-developer"` when it creates or changes UI files (pages, components, templates, styles, theme), `"platform-engineer"` when it creates or changes CI workflows, container files or deployment config (only when `docs/PROJECT_MENTAL_MODEL.md` records `deploy: yes`; otherwise plan no such tasks), otherwise `"backend-developer"`. A project without a UI never uses `"frontend-developer"`.
 - A feature that spans both becomes two tasks: the backend contract task first, then the frontend task that replaces the mock adapter call. Prototype screens are reused, never rebuilt.
-- In a new project with a UI, M3 includes a frontend polish task that applies Impeccable `polish` and `harden`.
+- In a new project with a UI, M3 includes a frontend polish task that applies Impeccable `polish` and `harden` when installed, otherwise the UI craft standard's check pass.
 - Each task's `acceptance_criteria` names the SPEC criteria it satisfies and how a test will check them.
 - Order tasks so that each depends only on earlier tasks.
 - Every task starts with `"status": "pending"`.

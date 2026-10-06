@@ -3,6 +3,8 @@
 # claude_tools uses Claude Code tool names; antigravity_tools uses Antigravity tool names.
 # main_agent = true marks the orchestrator: an Antigravity main agent and the Claude Code /orchestrate command.
 # claude_model (optional, sub-agents only): inherit, opus, sonnet or haiku for Claude Code; default inherit.
+# claude_skills (optional, sub-agents only): skills Claude Code preloads at startup, "plugin:skill" for plugin skills. Missing ones are skipped.
+# A prompt can contain <!-- INCLUDE name --> to inline agents/shared/name.md (used for the UI craft standard).
 # Simple roles use faster models; judgment-heavy roles inherit the user's session model.
 # Sub-agents also declare the registry keys below; the orchestrator's team table is generated from them.
 #   runs_for      project fact that activates the role: always, existing-code, ui, sensitive-data or deploy
@@ -66,12 +68,13 @@ claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
 
 [roles.frontend-developer]
-description = "Implements exactly one UI task (owner frontend-developer), including the Phase 2 prototype, in a new or existing frontend, using the Impeccable skill and DESIGN.md, or fixes it using failure output or review findings."
+description = "Implements exactly one UI task (owner frontend-developer), including the Phase 2 prototype, in a new or existing frontend, using the built-in UI craft standard (plus Impeccable when installed) and DESIGN.md, or fixes it using failure output or review findings."
 runs_for = "ui"
 slots = ["task-owner"]
 delegate_when = "the prototype, each task with owner `frontend-developer`, and each fix to it"
 produces = "UI code for that task; root `DESIGN.md` after the prototype"
 claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "Skill"]
+claude_skills = ["impeccable:impeccable"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
 
 [roles.qa-tester]
@@ -100,6 +103,7 @@ slots = ["discovery", "milestone-review"]
 delegate_when = "Phase 0 baseline of an existing UI, and the end of each milestone after the code review"
 produces = "baseline screenshots, or a verdict and findings, returned to you"
 claude_tools = ["Read", "Glob", "Grep", "Bash", "Skill"]
+claude_skills = ["impeccable:impeccable"]
 antigravity_tools = ["view_file", "grep_search", "list_dir", "find_by_name", "run_command"]
 
 [roles.platform-engineer]

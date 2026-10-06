@@ -34,7 +34,7 @@ Every Markdown document starts with `# <Title>` and a one-line statement of its 
 - **Configuration:** environment variables, to be listed in `.env.example` (describe them here; the orchestrator creates the file).
 - **Security and data:** only when `docs/PROJECT_MENTAL_MODEL.md` records `sensitive-data: yes`: a section headed exactly `## Security and data` with the data classification (what personal, health, payment or credential data exists, where it is stored and for how long), authentication and authorization for every interface, secrets handling, trust boundaries and input validation, what must never appear in logs or errors, and the external services that receive the data. The security reviewer checks it before tasks are planned.
 - **Setup requirements:** a section headed exactly `## Setup requirements`, which the orchestrator uses to prepare the user's machine and accounts before any code is written. It has three tables; write "None" under any that is empty:
-  - **Tools:** name, minimum version, and the command that checks it (for example `python --version`). A project with a UI also lists Impeccable (the launcher check from the orchestrator) and Playwright with Chromium.
+  - **Tools:** name, minimum version, and the command that checks it (for example `python --version`). A project with a UI also lists Playwright with Chromium, and Impeccable as optional (the launcher check from the orchestrator).
   - **Accounts and credentials:** service, environment variable, the first milestone that needs it, where to get it, what it costs, and how the tests run without it (a mock or fake, so tests never need a real key).
   - **Local services:** databases, queues or containers the project needs running, and how to start them.
 

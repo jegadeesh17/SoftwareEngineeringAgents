@@ -22,7 +22,7 @@ AI coding agents tend to fail in predictable ways. Each one has a specific guard
 | Agents can do too much | **Least privilege.** Each role gets only the tools it needs: planners have no shell, and the reviewer cannot edit files. |
 | Context is lost between sessions | **Files are the hand-off.** The living documents in `docs/` hold the plan, decisions, test results and status, so any agent (or you) can resume. |
 | Agents approve what you would reject | **You accept, not the agents.** For a UI, you click through a prototype before the architecture is frozen, and you test every milestone yourself before it counts as done. Feedback is sorted into UI, Behavior or Contract, and only Contract changes touch the architecture. |
-| Generic, "AI-looking" UI | **Impeccable-powered design.** The frontend developer and UI reviewer use the [Impeccable](https://impeccable.style) skill (with Anthropic's `frontend-design` as a fallback), and screenshots are reviewed at desktop and mobile widths. |
+| Generic, "AI-looking" UI | **Built-in design standard.** The frontend developer and UI reviewer carry their own UI craft rules and a refuse list of AI-looking patterns, and preload the [Impeccable](https://impeccable.style) skill on top when it is installed. Screenshots are reviewed at desktop and mobile widths. |
 | Breaks code it didn't write | **Existing-project mode.** A codebase analyst maps the stack, conventions and a baseline test run first. Work happens on its own branch, and the reviewer checks for regressions against the starting commit. |
 
 ## How it works
@@ -40,7 +40,7 @@ You <──> ORCHESTRATOR (the only agent that talks to you)
           │
           ├─> product-analyst ────────> docs/SPEC.md
           ├─> software-architect ─────> docs/ARCHITECTURE.md (draft), docs/DECISIONS.md
-          ├─> design studio (UI only) ─> Impeccable `shape` with you -> PRODUCT.md
+          ├─> design studio (UI only) ─> direction interview with you (Impeccable `shape` if installed) -> PRODUCT.md
           ├─> frontend-developer ─────> clickable prototype; you review it, feedback -> docs/FEEDBACK.md
           ├─> software-architect ─────> architecture FROZEN; you sign off what is expensive to change
           ├─> security-reviewer ──────> reviews the design's security section (sensitive-data only)
@@ -59,7 +59,7 @@ You <──> ORCHESTRATOR (the only agent that talks to you)
           │   for each milestone:
           ├─> adversarial-reviewer ───> read-only audit -> APPROVED or REJECTED
           ├─> security-reviewer ──────> read-only security audit (sensitive-data only)
-          ├─> ui-reviewer (UI only) ──> screenshots + Impeccable audit -> APPROVED or REJECTED
+          ├─> ui-reviewer (UI only) ──> screenshots + UI craft audit -> APPROVED or REJECTED
           └─> YOU test it (UAT) ──────> feedback triaged and fixed until you accept the milestone
 ```
 
@@ -73,7 +73,7 @@ You <──> ORCHESTRATOR (the only agent that talks to you)
 | SoftwareArchitect | `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` | docs only |
 | TaskPlanner | `docs/TASKS.json` | docs only |
 | BackendDeveloper | the non-UI code | yes, and can run commands |
-| FrontendDeveloper | the prototype and UI code (UI projects only) | yes, can run commands and use the Impeccable skill |
+| FrontendDeveloper | the prototype and UI code (UI projects only) | yes, can run commands and use the built-in UI craft standard (and Impeccable, if installed) |
 | QaTester | tests and `docs/QA_RESULTS.json` | tests and docs, and can run commands |
 | AdversarialReviewer | APPROVED/REJECTED verdict | **no**: read-only, can run tests |
 | UiReviewer | screenshots and an APPROVED/REJECTED verdict (UI projects only) | **no**: read-only, writes only screenshots under `.ui-review/` |
@@ -149,7 +149,7 @@ This is a personal project, open-sourced so you can build your own team on it. F
 - In Claude Code, sub-agents cannot start other sub-agents, so the orchestrator is your main session. It follows the process because its instructions say so, and you can talk it out of it.
 - "Planning agents only write to `docs/`" is an instruction, not a hard limit. Those agents have no shell access.
 - Existing-project mode is prompt-level and has not been exercised against a real project yet. It never touches a `docs/` file you already have under one of the team's names: it asks you to move it first.
-- Projects with a UI need the [Impeccable](https://impeccable.style) plugin and Playwright with Chromium. The design studio and the Impeccable skills run in Claude Code only.
+- Projects with a UI need Playwright with Chromium. The [Impeccable](https://impeccable.style) plugin is optional: the UI agents work without it and use it on top when installed (Claude Code only).
 - The security reviewer and platform engineer run only when the orchestrator records `sensitive-data` or `deploy` as yes in Phase 0, and they have not been exercised against a real project yet. The platform engineer prepares CI, containers and a deploy runbook but never deploys: that stays your decision.
 - Antigravity's custom-agent format is new. If it changes, only `engine/build_agents.py` needs updating.
 
