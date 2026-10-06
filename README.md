@@ -18,6 +18,7 @@ AI coding agents tend to fail in predictable ways. Each one has a specific guard
 | Says "tests pass" without proof | **Verify, don't trust.** A task is done only when the orchestrator re-runs the recorded test command itself and sees exit code 0. |
 | Loops forever on a failing fix | **Bounded retries.** A failing task goes back to the developer up to 3 times, then the orchestrator asks you. |
 | Nobody checks the work | **Adversarial review.** A read-only reviewer audits every milestone and returns APPROVED or REJECTED. |
+| Security is an afterthought | **Security review at two points.** For projects that handle personal, health, payment or credential data, a read-only security reviewer checks the architecture's security section before any task is planned, then audits each milestone for authorization gaps, injection and leaked secrets. |
 | Agents can do too much | **Least privilege.** Each role gets only the tools it needs: planners have no shell, and the reviewer cannot edit files. |
 | Context is lost between sessions | **Files are the hand-off.** The living documents in `docs/` hold the plan, decisions, test results and status, so any agent (or you) can resume. |
 | Agents approve what you would reject | **You accept, not the agents.** For a UI, you click through a prototype before the architecture is frozen, and you test every milestone yourself before it counts as done. Feedback is sorted into UI, Behavior or Contract, and only Contract changes touch the architecture. |
@@ -111,7 +112,7 @@ Open an empty folder for a new project, or the folder of an existing one, then:
 
 The orchestrator asks where the code should live (a new GitHub repository needs the [GitHub CLI](https://cli.github.com/) logged in with `gh auth login`). After the plan is approved, it tells you which accounts and API keys the project needs; you put them in `.env` yourself and never paste them into the chat.
 
-At the end you have working code, passing tests, one git commit per verified task (pushed to GitHub if you chose it), and the living documents in `docs/` explaining what was built and why (nine for an existing project, which adds the codebase map).
+At the end you have working code, passing tests, one git commit per verified task (pushed to GitHub if you chose it), and the living documents in `docs/` explaining what was built and why. Some appear only when they apply: a codebase map for an existing project, a UI review for a UI, a security review for a project with sensitive data, and a deployment runbook when you will deploy.
 
 ## Changing an existing project
 
@@ -127,7 +128,7 @@ The orchestrator asks which kind of change it is, and every agent follows the sa
 
 - **The first version was thrown away.** It was a Python pipeline that simulated the agents. Without API keys it could not do real work, so it was removed ([`3f4f24f`](https://github.com/jegadeesh17/SoftwareEngineeringAgents/commit/3f4f24f)) in favor of each tool's native sub-agents. The design is in [docs/superpowers/specs](docs/superpowers/specs/2026-09-28-native-subagents-design.md).
 - **One source, two runtimes.** Each role is defined once in `agents/`. [`engine/build_agents.py`](engine/build_agents.py) renders it into the Claude Code and Antigravity formats, so the two cannot drift apart. `--check` fails CI if a generated file is stale, and Claude Code hooks in this repo block hand-edits to generated files.
-- **Model tiering.** Judgment-heavy roles (architect, developer, reviewer) inherit your session's model. Routine roles use cheaper ones: Sonnet for the analyst, planner and QA, Haiku for git. Each role's model is one line in [`agents/roles.toml`](agents/roles.toml).
+- **Model tiering.** Judgment-heavy roles (architect, developer, reviewer) inherit your session's model. Routine roles use a cheaper one: Sonnet for the analyst, planner and QA. The orchestrator does the git work itself, since a sub-agent for a few git commands only adds waiting. Each role's model is one line in [`agents/roles.toml`](agents/roles.toml).
 - **Checked live, not assumed.** Antigravity enforces each agent's `tools` list. This was confirmed with CLI 1.2.12 by trying to call tools outside the list.
 - **A non-destructive installer.** It keeps a manifest of what it wrote, updates only its own files on reinstall, and never overwrites your edits without `--force`.
 - **Tested.** pytest covers the generator, the installer and the rule format, including a drift check against the committed files. CI runs on Linux and Windows with Python 3.11 and 3.13.
@@ -149,6 +150,7 @@ This is a personal project, open-sourced so you can build your own team on it. F
 - "Planning agents only write to `docs/`" is an instruction, not a hard limit. Those agents have no shell access.
 - Existing-project mode is prompt-level and has not been exercised against a real project yet. It never touches a `docs/` file you already have under one of the team's names: it asks you to move it first.
 - Projects with a UI need the [Impeccable](https://impeccable.style) plugin and Playwright with Chromium. The design studio and the Impeccable skills run in Claude Code only.
+- The security reviewer and platform engineer run only when the orchestrator records `sensitive-data` or `deploy` as yes in Phase 0, and they have not been exercised against a real project yet. The platform engineer prepares CI, containers and a deploy runbook but never deploys: that stays your decision.
 - Antigravity's custom-agent format is new. If it changes, only `engine/build_agents.py` needs updating.
 
 ## License
