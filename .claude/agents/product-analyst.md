@@ -34,6 +34,12 @@ Every Markdown document starts with `# <Title>` and a one-line statement of its 
 
 Specify the change, not the whole product. Journeys describe only what is new or different, and say which existing behavior they start from. Add a section **Regression criteria** after the acceptance criteria: Given / When / Then criteria for the existing behavior in the changed area (take them from "Existing behavior" in the map) that must keep working. Write at least one per existing behavior the change could affect. Do not re-specify behavior the change leaves alone.
 
+Branch on the change type in `docs/PROJECT_MENTAL_MODEL.md`:
+
+- **`Feature`, `Fix`, `Refactor`:** as above.
+- **`Redesign`:** one journey per redesigned screen, plus a **Parity criteria** section: Given / When / Then for the behavior each screen must keep. The visual change itself is judged in the prototype review, not by criteria.
+- **`Transformation`:** a **Parity criteria** section with at least one Given / When / Then per journey in "Existing behavior" of the map. New or changed behavior goes in the normal acceptance criteria.
+
 ## Return
 
-A 3–5 line summary: the number of journeys, the number of acceptance criteria (and regression criteria, for an existing project), and any open questions.
+A 3–5 line summary: the number of journeys, the number of acceptance criteria (and regression or parity criteria, for an existing project), and any open questions.

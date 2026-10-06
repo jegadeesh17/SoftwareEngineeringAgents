@@ -10,7 +10,7 @@ import json
 import re
 import sys
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -21,7 +21,15 @@ ANTIGRAVITY_AGENTS_DIR = Path(".agents") / "agents"
 CLAUDE_COMMAND_PATH = Path("templates") / "claude" / "orchestrate.md"
 GENERATED_MARKER = "<!-- GENERATED from agents/"
 
-ALLOWED_KEYS = {"description", "claude_tools", "antigravity_tools", "main_agent", "claude_model"}
+ALLOWED_KEYS = {
+    "description", "claude_tools", "antigravity_tools", "main_agent", "claude_model",
+    "runs_for", "delegate_when", "produces", "slots",
+}
+# Project facts a sub-agent can be gated on; the orchestrator records them in Phase 0
+PROJECT_FACTS = ("always", "existing-code", "ui", "sensitive-data", "deploy")
+# Workflow slots a sub-agent can fill; the orchestrator delegates by slot, so a new specialist needs no new workflow prose
+SLOTS = ("discovery", "pipeline", "design-review", "task-owner", "milestone-review")
+TEAM_TABLE_MARKER = "<!-- TEAM_TABLE -->"
 # Claude Code model aliases; Antigravity output always inherits the session model
 CLAUDE_MODELS = ("inherit", "opus", "sonnet", "haiku")
 ROLE_NAME = re.compile(r"[a-z][a-z0-9-]*")
@@ -38,10 +46,19 @@ class Role:
     claude_tools: Optional[List[str]] = None
     main_agent: bool = False
     claude_model: str = "inherit"
+    runs_for: str = "always"
+    delegate_when: str = ""
+    produces: str = ""
+    slots: List[str] = field(default_factory=list)
 
 
 def normalize_newlines(text: str) -> str:
     return text.replace("\r\n", "\n")
+
+
+def display_name(name: str) -> str:
+    """PascalCase display name for a kebab-case role id, e.g. ui-reviewer -> UiReviewer."""
+    return "".join(part.capitalize() for part in name.split("-"))
 
 
 def _is_string_list(value) -> bool:
@@ -92,6 +109,20 @@ def load_roles(source_dir: Path) -> List[Role]:
         claude_model = entry.get("claude_model", "inherit")
         if claude_model not in CLAUDE_MODELS:
             raise ValueError(f"role '{name}': 'claude_model' must be one of {', '.join(CLAUDE_MODELS)}")
+        registry_keys = ("runs_for", "delegate_when", "produces", "slots")
+        if main_agent and any(key in entry for key in registry_keys):
+            raise ValueError(f"role '{name}': {', '.join(registry_keys)} apply to sub-agents only")
+        if not main_agent:
+            for key in registry_keys:
+                if key not in entry:
+                    raise ValueError(f"role '{name}': sub-agents need '{key}'")
+            for key in ("delegate_when", "produces"):
+                if not isinstance(entry[key], str) or not entry[key].strip():
+                    raise ValueError(f"role '{name}': '{key}' must be a non-empty string")
+            if entry["runs_for"] not in PROJECT_FACTS:
+                raise ValueError(f"role '{name}': 'runs_for' must be one of {', '.join(PROJECT_FACTS)}")
+            if not _is_string_list(entry["slots"]) or any(slot not in SLOTS for slot in entry["slots"]):
+                raise ValueError(f"role '{name}': 'slots' must be a non-empty list drawn from {', '.join(SLOTS)}")
         body = normalize_newlines((source_dir / f"{name}.md").read_text(encoding="utf-8-sig")).strip() + "\n"
         roles.append(Role(
             name=name,
@@ -101,12 +132,31 @@ def load_roles(source_dir: Path) -> List[Role]:
             claude_tools=list(entry["claude_tools"]) if "claude_tools" in entry else None,
             main_agent=main_agent,
             claude_model=claude_model,
+            runs_for=entry.get("runs_for", "always"),
+            delegate_when=entry.get("delegate_when", ""),
+            produces=entry.get("produces", ""),
+            slots=list(entry.get("slots", [])),
         ))
 
-    main_agents = [r.name for r in roles if r.main_agent]
+    main_agents = [r for r in roles if r.main_agent]
     if len(main_agents) > 1:
-        raise ValueError(f"only one main agent allowed, found: {', '.join(main_agents)}")
+        raise ValueError(f"only one main agent allowed, found: {', '.join(r.name for r in main_agents)}")
+    for role in main_agents:
+        if role.body.count(TEAM_TABLE_MARKER) != 1:
+            raise ValueError(f"main agent body must contain {TEAM_TABLE_MARKER} exactly once")
     return roles
+
+
+def render_team_table(roles: List[Role]) -> str:
+    rows = [
+        "| Agent | Id | Runs for | Slots | Delegate when | It produces |",
+        "|---|---|---|---|---|---|",
+    ]
+    for role in sorted((r for r in roles if not r.main_agent), key=lambda r: r.name):
+        rows.append(
+            f"| {display_name(role.name)} | `{role.name}` | {role.runs_for} | {', '.join(role.slots)} | {role.delegate_when} | {role.produces} |"
+        )
+    return "\n".join(rows)
 
 
 def _banner(role: Role) -> str:
@@ -163,7 +213,10 @@ def render_claude_command(role: Role) -> str:
 
 def build_outputs(roles: List[Role]) -> Dict[Path, str]:
     outputs: Dict[Path, str] = {}
+    table = render_team_table(roles)
     for role in roles:
+        if role.main_agent:
+            role = replace(role, body=role.body.replace(TEAM_TABLE_MARKER, table))
         outputs[ANTIGRAVITY_AGENTS_DIR / role.name / "agent.md"] = render_antigravity_agent(role)
         if role.main_agent:
             outputs[CLAUDE_COMMAND_PATH] = render_claude_command(role)

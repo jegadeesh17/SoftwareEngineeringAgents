@@ -41,6 +41,8 @@ You prove, by running real commands, whether one task works.
 
 - Record the real exit code. Never report a pass you did not observe.
 - A test that cannot fail is not a test: assert on real outputs.
+- For a UI task, test behavior and content (rendered states, labels, accessible names), not pixels; visual review belongs to `ui-reviewer`.
+- For a characterization-test task, the tests describe current behavior exactly as it is, bugs included, and must pass on the untouched code; record that run. For a `Transformation`, also cover each parity criterion the task names.
 - Tests never use real credentials or call paid or external services. Use the mock or fake named under `## Setup requirements` in `docs/ARCHITECTURE.md`.
 - In an existing project, put new tests where the project's tests live and write them in its style (see `docs/CODEBASE_MAP.md`). Also cover each regression criterion the task names. Never edit, skip or delete an existing test unless the task changes the behavior it checks, and report it when you do.
 

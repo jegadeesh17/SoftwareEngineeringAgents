@@ -10,6 +10,7 @@ All agents (Orchestrator, Architect, Developer, DevOps) must enforce these indus
 ## 1. Project & Repository Naming
 - **Format**: `PascalCase` with 2 to 3 descriptive words.
 - **Examples**: `InvoiceWorkflowAutomation`, `FinancialStatementParser`, `ClientChurnPrediction`.
+- **Agent display names**: PascalCase (`FrontendDeveloper`, `UiReviewer`). Agent ids stay kebab-case (`frontend-developer`) because Claude Code and Antigravity require it. Change-type labels are PascalCase too (`Feature`, `Fix`, `Refactor`, `Redesign`, `Transformation`).
 - **Prohibited**: Non-descriptive names (`app`, `project1`, `test_repo`), camelCase (`invoiceApp`), or kebab-case (`invoice-app`) unless an external assignment brief strictly mandates it.
 
 ## 2. Directory & Package Structure
@@ -40,9 +41,11 @@ All agents (Orchestrator, Architect, Developer, DevOps) must enforce these indus
   - `docs/TASKS.json`
   - `docs/QA_RESULTS.json`
   - `docs/ADVERSARIAL_REVIEW.md`
+  - `docs/FEEDBACK.md`
+  - `docs/UI_REVIEW.md` (projects with a UI only)
   - `docs/PROJECT_STATUS.md`
   - `docs/CODEBASE_MAP.md` (existing projects only)
-- Root: `README.md` and `CHANGELOG.md`.
+- Root: `README.md` and `CHANGELOG.md`. Projects with a UI also keep `PRODUCT.md` and `DESIGN.md` in the root, in Impeccable's format.
 
 ## 5. Git Branches & Commit Messages
 - **Branch Naming**: `<type>/<kebab-case-description>`

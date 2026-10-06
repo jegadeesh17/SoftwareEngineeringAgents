@@ -7,6 +7,10 @@ QA_TOML = """
 description = "Runs tests"
 claude_tools = ["Read", "Bash"]
 antigravity_tools = ["view_file", "run_command"]
+runs_for = "always"
+slots = ["pipeline"]
+delegate_when = "after each task"
+produces = "test results"
 """
 
 ORCH_TOML = """
@@ -15,6 +19,8 @@ description = "Leads the team"
 main_agent = true
 antigravity_tools = ["view_file", "invoke_subagent"]
 """
+
+ORCH_BODY = "# Lead\n\n<!-- TEAM_TABLE -->\n"
 
 QA_BANNER = (
     "<!-- GENERATED from agents/qa-tester.md — edit the source and run "
@@ -72,7 +78,7 @@ def test_antigravity_agent_lists_tools_and_is_a_subagent(tmp_path):
 
 
 def test_orchestrator_is_antigravity_main_agent_and_claude_slash_command(tmp_path):
-    make_source(tmp_path, ORCH_TOML, {"orchestrator": "# Lead\n"})
+    make_source(tmp_path, ORCH_TOML, {"orchestrator": ORCH_BODY})
 
     assert build_agents.main([], root=tmp_path) == 0
 
@@ -86,7 +92,9 @@ def test_orchestrator_is_antigravity_main_agent_and_claude_slash_command(tmp_pat
         "---\n\n"
         "<!-- GENERATED from agents/orchestrator.md — edit the source and run "
         "python -m engine.build_agents -->\n\n"
-        "# Lead\n"
+        "# Lead\n\n"
+        "| Agent | Id | Runs for | Slots | Delegate when | It produces |\n"
+        "|---|---|---|---|---|---|\n"
     )
     assert not (tmp_path / ".claude" / "agents").exists()
 
@@ -126,6 +134,14 @@ def test_crlf_unicode_source_produces_lf_utf8_output(tmp_path):
             "only one main agent allowed, found: orchestrator, second-lead",
         ),
         ("[roles.qa-tester\n", {"qa-tester": "x"}, "roles.toml"),
+        (QA_TOML.replace('runs_for = "always"', 'runs_for = "mobile"'), {"qa-tester": "x"}, "'runs_for' must be one of"),
+        (QA_TOML.replace('produces = "test results"\n', ""), {"qa-tester": "x"}, "sub-agents need 'produces'"),
+        (QA_TOML.replace('slots = ["pipeline"]', 'slots = ["deploy-time"]'), {"qa-tester": "x"},
+         "'slots' must be a non-empty list drawn from"),
+        (QA_TOML.replace('slots = ["pipeline"]\n', ""), {"qa-tester": "x"}, "sub-agents need 'slots'"),
+        (ORCH_TOML + 'slots = ["pipeline"]\n', {"orchestrator": ORCH_BODY}, "apply to sub-agents only"),
+        (ORCH_TOML + 'runs_for = "ui"\n', {"orchestrator": ORCH_BODY}, "apply to sub-agents only"),
+        (ORCH_TOML, {"orchestrator": "# Lead\n"}, "must contain <!-- TEAM_TABLE --> exactly once"),
     ],
 )
 def test_invalid_source_is_rejected_and_nothing_written(tmp_path, capsys, toml_text, prompts, message):
@@ -221,7 +237,8 @@ def test_team_roster_and_permissions():
 
     assert set(roles) == {
         "orchestrator", "codebase-analyst", "product-analyst", "software-architect", "task-planner",
-        "software-developer", "qa-tester", "adversarial-reviewer", "devops-git",
+        "backend-developer", "frontend-developer", "qa-tester", "adversarial-reviewer", "ui-reviewer",
+        "security-reviewer", "platform-engineer",
     }
     assert [n for n, r in roles.items() if r.main_agent] == ["orchestrator"]
     # The analyst has to run the project's tests to record a baseline
@@ -232,6 +249,13 @@ def test_team_roster_and_permissions():
     # The reviewer must not be able to change the code it judges
     assert not {"Write", "Edit"} & set(roles["adversarial-reviewer"].claude_tools)
     assert not {"write_to_file", "replace_file_content"} & set(roles["adversarial-reviewer"].antigravity_tools)
+    assert not {"Write", "Edit"} & set(roles["security-reviewer"].claude_tools)
+    assert not {"write_to_file", "replace_file_content"} & set(roles["security-reviewer"].antigravity_tools)
+    assert not {"Write", "Edit"} & set(roles["ui-reviewer"].claude_tools)
+    assert not {"write_to_file", "replace_file_content"} & set(roles["ui-reviewer"].antigravity_tools)
+    # The UI roles invoke installed skills such as impeccable
+    assert "Skill" in roles["frontend-developer"].claude_tools
+    assert "Skill" in roles["ui-reviewer"].claude_tools
 
 
 def test_roles_that_work_on_existing_code_read_the_codebase_map():
@@ -240,13 +264,14 @@ def test_roles_that_work_on_existing_code_read_the_codebase_map():
     roles = {r.name: r for r in build_agents.load_roles(build_agents.REPO_ROOT / "agents")}
     users = (
         "orchestrator", "codebase-analyst", "product-analyst", "software-architect",
-        "task-planner", "software-developer", "qa-tester", "adversarial-reviewer",
+        "task-planner", "backend-developer", "frontend-developer", "qa-tester", "adversarial-reviewer",
+        "ui-reviewer",
     )
 
     for name in users:
         assert "docs/CODEBASE_MAP.md" in roles[name].body, name
     assert "codebase-analyst" in roles["orchestrator"].body
-    assert "## Job: branch" in roles["devops-git"].body
+    assert "git switch -c" in roles["orchestrator"].body
 
 
 def test_team_ships_the_standard_documentation_set():
@@ -312,7 +337,7 @@ def test_build_keeps_hand_written_agents_copied_from_generated_ones(tmp_path):
 
 
 def test_sub_agent_descriptions_are_scoped_to_the_orchestrator(tmp_path):
-    make_source(tmp_path, QA_TOML + ORCH_TOML, {"qa-tester": "# QA\n", "orchestrator": "# Lead\n"})
+    make_source(tmp_path, QA_TOML + ORCH_TOML, {"qa-tester": "# QA\n", "orchestrator": ORCH_BODY})
 
     assert build_agents.main([], root=tmp_path) == 0
 
@@ -348,7 +373,7 @@ def test_non_utf8_hand_written_agent_is_left_alone(tmp_path):
 
 
 def test_slash_command_is_removed_when_no_role_is_the_main_agent(tmp_path, capsys):
-    make_source(tmp_path, QA_TOML + ORCH_TOML, {"qa-tester": "# QA\n", "orchestrator": "# Lead\n"})
+    make_source(tmp_path, QA_TOML + ORCH_TOML, {"qa-tester": "# QA\n", "orchestrator": ORCH_BODY})
     build_agents.main([], root=tmp_path)
     (tmp_path / "agents" / "roles.toml").write_text(QA_TOML, encoding="utf-8")
     (tmp_path / "agents" / "orchestrator.md").unlink()
@@ -368,3 +393,69 @@ def test_antigravity_roles_can_discover_files_like_their_claude_counterparts():
     for role in roles:
         if role.main_agent or "Glob" in role.claude_tools:
             assert {"list_dir", "find_by_name"} <= set(role.antigravity_tools), role.name
+
+
+def _real_roles():
+    return {r.name: r for r in build_agents.load_roles(build_agents.REPO_ROOT / "agents")}
+
+
+def test_display_name_is_pascal_case():
+    assert build_agents.display_name("ui-reviewer") == "UiReviewer"
+    assert build_agents.display_name("codebase-analyst") == "CodebaseAnalyst"
+    assert build_agents.display_name("qa-tester") == "QaTester"
+
+
+def test_team_table_lists_every_sub_agent():
+    roles = _real_roles()
+    outputs = build_agents.build_outputs(list(roles.values()))
+    command = outputs[build_agents.CLAUDE_COMMAND_PATH]
+
+    assert build_agents.TEAM_TABLE_MARKER not in command
+    for name, role in roles.items():
+        if not role.main_agent:
+            assert f"| {build_agents.display_name(name)} | `{name}` | {role.runs_for} | {', '.join(role.slots)} |" in command, name
+
+
+def test_review_loop_is_wired():
+    roles = _real_roles()
+
+    for text in ("docs/FEEDBACK.md", "UAT", "FROZEN", "`owner`", "ui-reviewer", "impeccable", "baseline"):
+        assert text in roles["orchestrator"].body, text
+    assert "Expensive to change" in roles["software-architect"].body
+    assert "mock adapter" in roles["software-architect"].body
+    assert '"owner"' in roles["task-planner"].body
+    assert "impeccable" in roles["frontend-developer"].body
+    assert "impeccable" in roles["ui-reviewer"].body
+
+
+def test_existing_projects_can_be_transformed():
+    roles = _real_roles()
+
+    for name in ("orchestrator", "codebase-analyst", "product-analyst", "software-architect",
+                 "task-planner", "qa-tester", "adversarial-reviewer", "backend-developer"):
+        assert "Transformation" in roles[name].body, name
+    for name in ("orchestrator", "product-analyst", "software-architect", "task-planner",
+                 "frontend-developer", "ui-reviewer"):
+        assert "Redesign" in roles[name].body, name
+    assert "Migration path" in roles["software-architect"].body
+    assert "characterization" in roles["task-planner"].body
+    assert "needs_user_confirmation" in roles["task-planner"].body
+    assert "UI inventory" in roles["codebase-analyst"].body
+
+
+def test_every_sub_agent_declares_slots_and_gated_roles_use_their_project_fact():
+    roles = _real_roles()
+
+    for name, role in roles.items():
+        if not role.main_agent:
+            assert role.slots and set(role.slots) <= set(build_agents.SLOTS), name
+    assert roles["security-reviewer"].runs_for == "sensitive-data"
+    assert roles["platform-engineer"].runs_for == "deploy"
+    assert set(roles["security-reviewer"].slots) == {"design-review", "milestone-review"}
+
+
+def test_orchestrator_prompt_stays_within_its_line_budget():
+    # The orchestrator is the one prompt every feature adds to; past this size it starts skipping steps
+    roles = _real_roles()
+
+    assert len(roles["orchestrator"].body.splitlines()) <= 300
