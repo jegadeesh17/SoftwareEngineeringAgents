@@ -121,7 +121,7 @@ Run this yourself, in this session, because it interviews the user. Invoke the `
 - **Existing project, `Feature`, `Fix` or `Refactor`:** `document` first if there is no `DESIGN.md`, then `shape` in refinement mode: keep the incumbent design world.
 - **Existing project, `Redesign` or `Transformation`:** `document` the current system first, then `shape` in redesign mode: a new direction, with behavior and content kept.
 
-Let it ask the user its questions and run its direction choice. It writes root `PRODUCT.md` and a confirmed brief. If `impeccable` is not installed, use the `frontend-design` skill and tell the user. Then give the **session tip** for a clean context.
+Let it ask the user its questions and run its direction choice. It writes root `PRODUCT.md` and a confirmed brief. If `impeccable` is not installed, tell the user in one line that installing it gives a richer studio, then run a short studio yourself: ask about the audience, tone, three adjectives, reference sites and anything to avoid; propose 2-3 named directions (reference world, typefaces, palette, layout idea); and write the chosen one with the answers to root `PRODUCT.md`. Then give the **session tip** for a clean context.
 
 #### Phase 2.2c: Prototype review (`ui` only)
 
@@ -130,7 +130,7 @@ Let it ask the user its questions and run its direction choice. It writes root `
 3. Ask for **all** feedback in one batch and record it in `docs/FEEDBACK.md` as a numbered round.
 4. Classify each item: **UI** (look, copy, layout), **Behavior** (flow, validation, states) or **Contract** (new data, field, endpoint, integration, auth, a data model change, or a change to an existing public interface).
 5. Send UI and Behavior items to `frontend-developer`. Keep Contract items for the freeze.
-6. Repeat until the user says the prototype is accepted. Offer `/impeccable live` for tweaking elements in the browser. After 3 rounds, suggest moving the remaining polish to M3.
+6. Repeat until the user says the prototype is accepted. If Impeccable is installed, offer `/impeccable live` for tweaking elements in the browser. After 3 rounds, suggest moving the remaining polish to M3.
 
 #### Phase 2.2d: Architecture freeze
 
@@ -150,7 +150,7 @@ After the freeze, every piece of user feedback is classified UI, Behavior or Con
 
 Only now is it known which tools, accounts and keys the project needs. Read `## Setup requirements` in `docs/ARCHITECTURE.md`.
 
-1. **Tools.** Run each check command. For anything missing or too old, tell the user how to install it and wait. For a project with a UI this includes the Impeccable plugin and Playwright with Chromium.
+1. **Tools.** Run each check command. For anything missing or too old, tell the user how to install it and wait. For a project with a UI this includes Playwright with Chromium. The Impeccable plugin is optional: if it is missing, say it improves design quality and how to install it, but do not wait.
 2. **`.env.example`.** If the project uses any environment variables, write `.env.example` with one line per variable, `NAME=` and no value, each preceded by a comment saying what it is for and where to get it.
 3. **Present the setup** as a plain-English table: each service or key, why the project needs it, what it costs, the first milestone that needs it, and where to get it. Below it, list the tasks from `docs/TASKS.json`, one line each, grouped by milestone, so the user can cut anything they did not ask for before it is built. then ask the user to confirm the stack, any paid service and the task list. Anything other than a clear yes means the conversation continues; if they reject a choice, send the feedback to `software-architect` and `task-planner` and present the setup again. A choice that changes a frozen contract goes through the change request rule above.
 4. **Credentials.** Ask the user to copy `.env.example` to `.env` and fill in the values in their own editor. Remind them never to paste a secret into the chat. Check that every variable needed by M1 has a value without printing it, for example `grep -cE '^OPENAI_API_KEY=.+' .env` (1 means set). Wait until they are all set.
@@ -252,7 +252,7 @@ Tick an item only when its evidence exists on disk. For build items, tick only a
 
 They live in the project's `docs/` folder: `README.md` (the docs index), `PROJECT_MENTAL_MODEL.md`, `PROJECT_STATUS.md`, `SPEC.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `TASKS.json`, `QA_RESULTS.json`, `ADVERSARIAL_REVIEW.md`, `FEEDBACK.md`. A project with a UI also gets `UI_REVIEW.md`, written by you from `ui-reviewer`'s reports, and a `sensitive-data` project gets `SECURITY_REVIEW.md`, written by you from `security-reviewer`'s reports. A `deploy` project also gets `DEPLOYMENT.md`, written by `platform-engineer`. An existing project also gets `CODEBASE_MAP.md`, written by `codebase-analyst`.
 
-Outside `docs/`, you write only `.gitignore` (Phase 0), `.env.example` (Phase 2.4), `CHANGELOG.md` (each milestone approval) and `README.md` (Phase 4). Root `PRODUCT.md` and `DESIGN.md` (projects with a UI, in Impeccable's format) are written through the `impeccable` skill, by you in Phase 2.2b and by `frontend-developer` after the prototype. Everything else is written by a sub-agent.
+Outside `docs/`, you write only `.gitignore` (Phase 0), `.env.example` (Phase 2.4), `CHANGELOG.md` (each milestone approval) and `README.md` (Phase 4). Root `PRODUCT.md` and `DESIGN.md` (projects with a UI, in Impeccable's format) are written by you in Phase 2.2b and by `frontend-developer` after the prototype, through the `impeccable` skill when it is installed. Everything else is written by a sub-agent.
 
 ## Document templates
 

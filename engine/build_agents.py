@@ -23,8 +23,11 @@ GENERATED_MARKER = "<!-- GENERATED from agents/"
 
 ALLOWED_KEYS = {
     "description", "claude_tools", "antigravity_tools", "main_agent", "claude_model",
-    "runs_for", "delegate_when", "produces", "slots",
+    "runs_for", "delegate_when", "produces", "slots", "claude_skills",
 }
+# Shared prompt fragments in agents/shared/, inlined so every tool gets them without an install
+INCLUDE_MARKER = re.compile(r"<!-- INCLUDE ([a-z][a-z0-9-]*) -->")
+SHARED_DIR = "shared"
 # Project facts a sub-agent can be gated on; the orchestrator records them in Phase 0
 PROJECT_FACTS = ("always", "existing-code", "ui", "sensitive-data", "deploy")
 # Workflow slots a sub-agent can fill; the orchestrator delegates by slot, so a new specialist needs no new workflow prose
@@ -50,6 +53,7 @@ class Role:
     delegate_when: str = ""
     produces: str = ""
     slots: List[str] = field(default_factory=list)
+    claude_skills: List[str] = field(default_factory=list)
 
 
 def normalize_newlines(text: str) -> str:
@@ -63,6 +67,16 @@ def display_name(name: str) -> str:
 
 def _is_string_list(value) -> bool:
     return isinstance(value, list) and bool(value) and all(isinstance(v, str) and v.strip() for v in value)
+
+
+def _expand_includes(name: str, body: str, source_dir: Path) -> str:
+    def include(match: re.Match) -> str:
+        path = source_dir / SHARED_DIR / f"{match.group(1)}.md"
+        if not path.exists():
+            raise ValueError(f"role '{name}': include '{match.group(1)}' not found in agents/shared/")
+        return normalize_newlines(path.read_text(encoding="utf-8-sig")).strip()
+
+    return INCLUDE_MARKER.sub(include, body)
 
 
 def load_roles(source_dir: Path) -> List[Role]:
@@ -109,6 +123,10 @@ def load_roles(source_dir: Path) -> List[Role]:
         claude_model = entry.get("claude_model", "inherit")
         if claude_model not in CLAUDE_MODELS:
             raise ValueError(f"role '{name}': 'claude_model' must be one of {', '.join(CLAUDE_MODELS)}")
+        if main_agent and "claude_skills" in entry:
+            raise ValueError(f"role '{name}': 'claude_skills' applies to sub-agents only")
+        if "claude_skills" in entry and not _is_string_list(entry["claude_skills"]):
+            raise ValueError(f"role '{name}': 'claude_skills' must be a non-empty list of strings")
         registry_keys = ("runs_for", "delegate_when", "produces", "slots")
         if main_agent and any(key in entry for key in registry_keys):
             raise ValueError(f"role '{name}': {', '.join(registry_keys)} apply to sub-agents only")
@@ -124,6 +142,7 @@ def load_roles(source_dir: Path) -> List[Role]:
             if not _is_string_list(entry["slots"]) or any(slot not in SLOTS for slot in entry["slots"]):
                 raise ValueError(f"role '{name}': 'slots' must be a non-empty list drawn from {', '.join(SLOTS)}")
         body = normalize_newlines((source_dir / f"{name}.md").read_text(encoding="utf-8-sig")).strip() + "\n"
+        body = _expand_includes(name, body, source_dir)
         roles.append(Role(
             name=name,
             description=entry["description"],
@@ -136,6 +155,7 @@ def load_roles(source_dir: Path) -> List[Role]:
             delegate_when=entry.get("delegate_when", ""),
             produces=entry.get("produces", ""),
             slots=list(entry.get("slots", [])),
+            claude_skills=list(entry.get("claude_skills", [])),
         ))
 
     main_agents = [r for r in roles if r.main_agent]
@@ -181,7 +201,8 @@ def render_claude_agent(role: Role) -> str:
         f"description: {_yaml_string(_description(role))}\n"
         f"tools: {', '.join(role.claude_tools)}\n"
         f"model: {role.claude_model}\n"
-        "---\n\n"
+        + (f"skills: {', '.join(role.claude_skills)}\n" if role.claude_skills else "")
+        + "---\n\n"
         + _banner(role)
         + role.body
     )
