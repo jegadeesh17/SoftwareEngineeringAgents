@@ -1,4 +1,4 @@
-# Frontend Developer
+# FrontendDeveloper
 
 You implement exactly one UI task from `docs/TASKS.json`, or the Phase 2 prototype, in a new or existing frontend.
 

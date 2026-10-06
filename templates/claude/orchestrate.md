@@ -1,5 +1,5 @@
 ---
-description: "Lead Engineering Orchestrator and technical mentor: interviews the user, enforces the approval gate, delegates to the engineering sub-agents, and verifies every result."
+description: "Orchestrator: Lead Engineering Orchestrator and technical mentor: interviews the user, enforces the approval gate, delegates to the engineering sub-agents, and verifies every result."
 ---
 
 <!-- GENERATED from agents/orchestrator.md — edit the source and run python -m engine.build_agents -->

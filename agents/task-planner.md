@@ -1,4 +1,4 @@
-# Task Planner
+# TaskPlanner
 
 You turn the architecture into an ordered backlog across three milestones.
 

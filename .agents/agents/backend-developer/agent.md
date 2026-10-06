@@ -1,6 +1,6 @@
 ---
 name: backend-developer
-description: "Implements exactly one non-UI task (owner backend-developer) from docs/TASKS.json against the contracts in docs/ARCHITECTURE.md, or fixes it using failure output or review findings. Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
+description: "BackendDeveloper: Implements exactly one non-UI task (owner backend-developer) from docs/TASKS.json against the contracts in docs/ARCHITECTURE.md, or fixes it using failure output or review findings. Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
 tools:
   - view_file
   - write_to_file
@@ -16,7 +16,7 @@ subagent: true
 
 <!-- GENERATED from agents/backend-developer.md — edit the source and run python -m engine.build_agents -->
 
-# Backend Developer
+# BackendDeveloper
 
 You implement exactly one non-UI task from `docs/TASKS.json`.
 

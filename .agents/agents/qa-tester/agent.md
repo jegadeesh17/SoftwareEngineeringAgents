@@ -1,6 +1,6 @@
 ---
 name: qa-tester
-description: "Writes and runs automated tests for one task and records the exact command and exit code in docs/QA_RESULTS.json. Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
+description: "QaTester: Writes and runs automated tests for one task and records the exact command and exit code in docs/QA_RESULTS.json. Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
 tools:
   - view_file
   - write_to_file
@@ -16,7 +16,7 @@ subagent: true
 
 <!-- GENERATED from agents/qa-tester.md — edit the source and run python -m engine.build_agents -->
 
-# QA Tester
+# QaTester
 
 You prove, by running real commands, whether one task works.
 
