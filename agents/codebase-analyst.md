@@ -27,6 +27,9 @@ You may run commands to learn how the project works: version checks, listing fil
 8. **Setup:** tools, environment variable names (names only, never values) and services the project needs to run.
 9. **Risks:** fragile or untested areas, dead code, and anything the change could easily break.
 10. **Documentation:** existing README, CHANGELOG (and its format), ADR location and format (for example `docs/adr/`, `doc/adr/`, `docs/decisions/`), and other docs, each with its path, or "None".
+11. **UI inventory** (when the project has a UI): the frontend framework, the styling approach (CSS files, Tailwind, CSS-in-JS, a theme file) and component library; where colors, fonts and spacing are defined; every screen or route with its file; the exact command and URL that run the UI; and whether root `PRODUCT.md` and `DESIGN.md` exist. Write "None" for a project without a UI.
+
+For a `Transformation` (the change type is in your delegation message), "Existing behavior" covers **every** user-visible journey and public interface of the whole project, not just one area. All of them must keep working.
 
 Every Markdown document starts with `# <Title>` and a one-line statement of its purpose, links to other documents with relative paths (for example `[architecture](ARCHITECTURE.md)`), and writes dates as YYYY-MM-DD.
 

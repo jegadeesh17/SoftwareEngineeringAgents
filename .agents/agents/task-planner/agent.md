@@ -1,6 +1,6 @@
 ---
 name: task-planner
-description: "Breaks the architecture into ordered, testable tasks across milestones (three for a new project, one to three for a change to an existing one) in docs/TASKS.json. Use after docs/ARCHITECTURE.md exists. Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
+description: "Breaks the architecture into ordered, testable tasks with an owner across milestones (three for a new project, one to three for a change to an existing one) in docs/TASKS.json. Use after docs/ARCHITECTURE.md is frozen. Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
 tools:
   - view_file
   - write_to_file
@@ -22,6 +22,7 @@ You turn the architecture into an ordered backlog across three milestones.
 ## Read
 
 - `docs/SPEC.md`, `docs/ARCHITECTURE.md`, `docs/PROJECT_MENTAL_MODEL.md`
+- Root `DESIGN.md` and `docs/FEEDBACK.md`, if they exist.
 - `docs/CODEBASE_MAP.md`, if it exists, and the existing files a task will change (confirm they exist with Glob).
 
 ## Write
@@ -37,6 +38,9 @@ You turn the architecture into an ordered backlog across three milestones.
 - Each task can be implemented and tested in one sitting, touches few files, and adds roughly 300 lines or less. Split a large page, dashboard or document into a skeleton task and one task per section.
 - Every deliverable named in the SPEC's user journeys is built in M1 or M2. M3 only polishes and hardens what exists; it never introduces a new deliverable.
 - For a Prototype, plan the fewest tasks that cover the acceptance criteria.
+- Every task has an `"owner"`: `"frontend-developer"` when it creates or changes UI files (pages, components, templates, styles, theme), `"platform-engineer"` when it creates or changes CI workflows, container files or deployment config (only when `docs/PROJECT_MENTAL_MODEL.md` records `deploy: yes`; otherwise plan no such tasks), otherwise `"backend-developer"`. A project without a UI never uses `"frontend-developer"`.
+- A feature that spans both becomes two tasks: the backend contract task first, then the frontend task that replaces the mock adapter call. Prototype screens are reused, never rebuilt.
+- In a new project with a UI, M3 includes a frontend polish task that applies Impeccable `polish` and `harden`.
 - Each task's `acceptance_criteria` names the SPEC criteria it satisfies and how a test will check them.
 - Order tasks so that each depends only on earlier tasks.
 - Every task starts with `"status": "pending"`.
@@ -53,6 +57,7 @@ You turn the architecture into an ordered backlog across three milestones.
         {
           "id": "M1-TASK-01",
           "title": "Short title",
+          "owner": "backend-developer",
           "description": "Specific implementation instructions",
           "files_to_create": ["src/models.py"],
           "files_to_modify": [],
@@ -75,6 +80,8 @@ The project already has code, so the rules above change:
 - **Baseline.** If the user chose to fix failing baseline tests first, make that the first M1 task. If the project has no tests, make the first M1 task set up the test runner named in `docs/ARCHITECTURE.md`.
 - **Regression criteria.** Each task that touches existing behavior names the regression criteria from the SPEC that its tests must keep passing.
 - **Stay in scope.** No task refactors, renames or restyles code the change does not need.
+- **`Redesign`:** M1 is the theme/token file, the app shell and the primary journey's screens; M2 the remaining screens; M3 `polish` and `harden`.
+- **`Transformation`:** the first M1 tasks are **characterization tests** (owner `backend-developer`) that pin the parity criteria and must pass on the untouched code. Then one journey slice is migrated end to end; M2 migrates the remaining journeys; M3 is the cutover. Removing the old code is a separate final task marked `"needs_user_confirmation": true`.
 
 ## Return
 

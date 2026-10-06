@@ -4,6 +4,13 @@
 # main_agent = true marks the orchestrator: an Antigravity main agent and the Claude Code /orchestrate command.
 # claude_model (optional, sub-agents only): inherit, opus, sonnet or haiku for Claude Code; default inherit.
 # Simple roles use faster models; judgment-heavy roles inherit the user's session model.
+# Sub-agents also declare the registry keys below; the orchestrator's team table is generated from them.
+#   runs_for      project fact that activates the role: always, existing-code, ui, sensitive-data or deploy
+#   delegate_when when the orchestrator delegates to it
+#   produces      what it hands back
+#   slots         workflow slots it fills: discovery, pipeline, design-review, task-owner or milestone-review
+# A specialist is a new agent only if it needs different tools, an independent context, different file
+# ownership or a different model. Otherwise it is a skill that an existing agent loads.
 
 [roles.orchestrator]
 description = "Lead Engineering Orchestrator and technical mentor: interviews the user, enforces the approval gate, delegates to the engineering sub-agents, and verifies every result."
@@ -12,45 +19,103 @@ antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep
 
 [roles.codebase-analyst]
 claude_model = "sonnet"
-description = "Maps an existing project into docs/CODEBASE_MAP.md (stack, layout, conventions, test commands, baseline test result, existing behavior). Use before planning when the workspace already contains code."
+description = "Maps an existing project into docs/CODEBASE_MAP.md (stack, layout, conventions, UI inventory, test commands, baseline test result, existing behavior). Use before planning when the workspace already contains code."
+runs_for = "existing-code"
+slots = ["discovery"]
+delegate_when = "Phase 0, only when the workspace already contains code"
+produces = "`docs/CODEBASE_MAP.md`: stack, conventions, UI inventory, test commands, baseline test result, existing behavior"
 claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
 
 [roles.product-analyst]
 claude_model = "sonnet"
 description = "Turns docs/PROJECT_MENTAL_MODEL.md into docs/SPEC.md with user journeys and Given/When/Then acceptance criteria. Use after the user approves the scope."
+runs_for = "always"
+slots = ["pipeline"]
+delegate_when = "scope is approved"
+produces = "`docs/SPEC.md`"
 claude_tools = ["Read", "Write", "Edit", "Glob", "Grep"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name"]
 
 [roles.software-architect]
-description = "Designs the stack, components, data models, interfaces and test command in docs/ARCHITECTURE.md and records decisions in docs/DECISIONS.md. Use after docs/SPEC.md exists."
+description = "Designs the stack, components, data models, interfaces and test command in docs/ARCHITECTURE.md (a draft, then frozen after the prototype is accepted) and records decisions in docs/DECISIONS.md. Use after docs/SPEC.md exists."
+runs_for = "always"
+slots = ["pipeline"]
+delegate_when = "`docs/SPEC.md` exists (draft), and again after the prototype is accepted (freeze)"
+produces = "`docs/ARCHITECTURE.md`, `docs/DECISIONS.md`"
 claude_tools = ["Read", "Write", "Edit", "Glob", "Grep"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name"]
 
 [roles.task-planner]
 claude_model = "sonnet"
-description = "Breaks the architecture into ordered, testable tasks across milestones (three for a new project, one to three for a change to an existing one) in docs/TASKS.json. Use after docs/ARCHITECTURE.md exists."
+description = "Breaks the architecture into ordered, testable tasks with an owner across milestones (three for a new project, one to three for a change to an existing one) in docs/TASKS.json. Use after docs/ARCHITECTURE.md is frozen."
+runs_for = "always"
+slots = ["pipeline"]
+delegate_when = "the architecture is frozen"
+produces = "`docs/TASKS.json`"
 claude_tools = ["Read", "Write", "Edit", "Glob", "Grep"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name"]
 
-[roles.software-developer]
-description = "Implements exactly one task from docs/TASKS.json, or fixes it using failure output or review findings."
+[roles.backend-developer]
+description = "Implements exactly one non-UI task (owner backend-developer) from docs/TASKS.json against the contracts in docs/ARCHITECTURE.md, or fixes it using failure output or review findings."
+runs_for = "always"
+slots = ["task-owner"]
+delegate_when = "each task with owner `backend-developer`, and each fix to it"
+produces = "code for that task"
 claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash"]
+antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
+
+[roles.frontend-developer]
+description = "Implements exactly one UI task (owner frontend-developer), including the Phase 2 prototype, in a new or existing frontend, using the Impeccable skill and DESIGN.md, or fixes it using failure output or review findings."
+runs_for = "ui"
+slots = ["task-owner"]
+delegate_when = "the prototype, each task with owner `frontend-developer`, and each fix to it"
+produces = "UI code for that task; root `DESIGN.md` after the prototype"
+claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "Skill"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
 
 [roles.qa-tester]
 claude_model = "sonnet"
 description = "Writes and runs automated tests for one task and records the exact command and exit code in docs/QA_RESULTS.json."
+runs_for = "always"
+slots = ["pipeline"]
+delegate_when = "after each implementation"
+produces = "tests and an entry in `docs/QA_RESULTS.json`"
 claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
 
 [roles.adversarial-reviewer]
 description = "Read-only reviewer that audits a finished milestone for edge cases, silent failures, contract drift and security issues, and returns APPROVED or REJECTED."
+runs_for = "always"
+slots = ["milestone-review"]
+delegate_when = "end of each milestone"
+produces = "a verdict and findings, returned to you"
 claude_tools = ["Read", "Glob", "Grep", "Bash"]
 antigravity_tools = ["view_file", "grep_search", "list_dir", "find_by_name", "run_command"]
 
-[roles.devops-git]
-claude_model = "haiku"
-description = "Sets up the git repository and GitHub remote, and makes the phase, milestone and handover commits as Conventional Commits, staging only the listed files and pushing when a remote exists."
+[roles.ui-reviewer]
+description = "Read-only reviewer that screenshots the running UI at desktop and mobile widths (a before baseline for existing projects, or a milestone review), applies Impeccable audit and critique, checks DESIGN.md and WCAG 2.2 AA, and returns APPROVED or REJECTED."
+runs_for = "ui"
+slots = ["discovery", "milestone-review"]
+delegate_when = "Phase 0 baseline of an existing UI, and the end of each milestone after the code review"
+produces = "baseline screenshots, or a verdict and findings, returned to you"
+claude_tools = ["Read", "Glob", "Grep", "Bash", "Skill"]
+antigravity_tools = ["view_file", "grep_search", "list_dir", "find_by_name", "run_command"]
+
+[roles.platform-engineer]
+description = "Implements exactly one CI, container or deployment-config task (owner platform-engineer) from docs/TASKS.json and writes the deploy runbook in docs/DEPLOYMENT.md. Never deploys."
+runs_for = "deploy"
+slots = ["task-owner"]
+delegate_when = "each task with owner `platform-engineer`, and each fix to it"
+produces = "CI, container and deployment config for that task; `docs/DEPLOYMENT.md`"
+claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash"]
+antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
+
+[roles.security-reviewer]
+description = "Read-only security reviewer with two modes: design (reviews the architecture's security and data section) and milestone (audits changed code for authorization, injection, secrets and data exposure), and returns APPROVED or REJECTED."
+runs_for = "sensitive-data"
+slots = ["design-review", "milestone-review"]
+delegate_when = "after the architecture is frozen (design mode), and at the end of each milestone after the code review (milestone mode)"
+produces = "a verdict and findings, returned to you"
 claude_tools = ["Read", "Glob", "Grep", "Bash"]
 antigravity_tools = ["view_file", "grep_search", "list_dir", "find_by_name", "run_command"]

@@ -43,8 +43,8 @@ def test_installer_installs_team_for_both_tools(tmp_path, installer):
         _text(ROOT / "templates" / "claude" / "orchestrate.md")
     assert _text(tmp_path / ".gemini" / "config" / "agents" / "orchestrator" / "agent.md") == \
         _text(ROOT / ".agents" / "agents" / "orchestrator" / "agent.md")
-    assert len(list((tmp_path / ".claude" / "agents").glob("*.md"))) == 8
-    assert len(list((tmp_path / ".gemini" / "config" / "agents").glob("*/agent.md"))) == 9
+    assert len(list((tmp_path / ".claude" / "agents").glob("*.md"))) == 11
+    assert len(list((tmp_path / ".gemini" / "config" / "agents").glob("*/agent.md"))) == 12
 
 
 def test_installer_keeps_customized_slash_command(tmp_path, installer, capsys):
@@ -181,10 +181,10 @@ def test_installer_notes_installed_roles_that_were_removed_from_the_team(tmp_pat
     assert installer.main([], home=home, root=repo) == 0
     manifest = repo / "agents" / "roles.toml"
     manifest.write_text(
-        re.sub(r"\[roles\.devops-git\].*?(?=\n\[roles\.|\Z)", "", manifest.read_text(encoding="utf-8"), flags=re.S),
+        re.sub(r"\[roles\.codebase-analyst\].*?(?=\n\[roles\.|\Z)", "", manifest.read_text(encoding="utf-8"), flags=re.S),
         encoding="utf-8",
     )
-    (repo / "agents" / "devops-git.md").unlink()
+    (repo / "agents" / "codebase-analyst.md").unlink()
     assert build_agents.main([], root=repo) == 0
     capsys.readouterr()
 
@@ -192,5 +192,5 @@ def test_installer_notes_installed_roles_that_were_removed_from_the_team(tmp_pat
 
     out = capsys.readouterr().out
     assert "no longer part of the team" in out
-    assert str(Path(".claude") / "agents" / "devops-git.md") in out
-    assert (home / ".claude" / "agents" / "devops-git.md").exists()
+    assert str(Path(".claude") / "agents" / "codebase-analyst.md") in out
+    assert (home / ".claude" / "agents" / "codebase-analyst.md").exists()

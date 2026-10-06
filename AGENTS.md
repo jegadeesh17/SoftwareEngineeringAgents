@@ -29,10 +29,11 @@ Other commands:
 
 ## Tool names
 
-- `claude_tools` use Claude Code names: `Read`, `Write`, `Edit`, `Glob`, `Grep`, `Bash`.
+- `claude_tools` use Claude Code names: `Read`, `Write`, `Edit`, `Glob`, `Grep`, `Bash`, `Skill`. `Skill` lets a role invoke installed skills such as `impeccable` and `frontend-design`.
 - `antigravity_tools` use Antigravity names: `view_file`, `write_to_file`, `replace_file_content`, `grep_search`, `list_dir`, `find_by_name`, `run_command`, `invoke_subagent`.
 - The orchestrator (`main_agent = true`) has no Claude tool list: in Claude Code it runs as the main session via `/orchestrate`.
 - `claude_model` (optional, sub-agents only) sets the Claude Code model: `inherit` (default), `opus`, `sonnet` or `haiku`. Antigravity agents always use `model: inherit`.
+- Every sub-agent declares `runs_for` (`always`, `existing-code`, `ui`, `sensitive-data` or `deploy`: the project fact that activates it), `slots` (the workflow slots it fills: `discovery`, `pipeline`, `design-review`, `task-owner` or `milestone-review`), `delegate_when` and `produces`. The orchestrator's team table is generated from them: its prompt contains `<!-- TEAM_TABLE -->` exactly once, and the table shows each agent's PascalCase display name next to its kebab-case id. Adding a specialist means adding a role here; no workflow prose changes unless it needs a new step. A specialist is a new agent only if it needs different tools, an independent context, different file ownership or a different model; otherwise it is a skill that an existing agent loads.
 - Antigravity enforces `tools` for both the orchestrator and sub-agents. This was checked live with CLI 1.2.12: tools outside the list could not be called. Built-in coordination tools such as `send_message` and `manage_task` stay available.
 
 ## Rules
