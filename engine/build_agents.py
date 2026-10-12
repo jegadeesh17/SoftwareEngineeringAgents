@@ -121,13 +121,9 @@ def load_roles(source_dir: Path) -> List[Role]:
         for key in ("claude_tools", "antigravity_tools"):
             if key in entry and not _is_string_list(entry[key]):
                 raise ValueError(f"role '{name}': '{key}' must be a non-empty list of strings")
-        if main_agent and "claude_model" in entry:
-            raise ValueError(f"role '{name}': 'claude_model' applies to sub-agents only")
         claude_model = entry.get("claude_model", "inherit")
         if claude_model not in CLAUDE_MODELS:
             raise ValueError(f"role '{name}': 'claude_model' must be one of {', '.join(CLAUDE_MODELS)}")
-        if main_agent and "claude_effort" in entry:
-            raise ValueError(f"role '{name}': 'claude_effort' applies to sub-agents only")
         claude_effort = entry.get("claude_effort")
         if claude_effort is not None and claude_effort not in CLAUDE_EFFORTS:
             raise ValueError(f"role '{name}': 'claude_effort' must be one of {', '.join(CLAUDE_EFFORTS)}")
@@ -235,10 +231,13 @@ def render_antigravity_agent(role: Role) -> str:
 
 
 def render_claude_command(role: Role) -> str:
+    # A command's model and effort hold only for the turn it is invoked; the prompt asks the user to start on the same model
     return (
         "---\n"
         f"description: {_yaml_string(_description(role))}\n"
-        "---\n\n"
+        + (f"model: {role.claude_model}\n" if role.claude_model != "inherit" else "")
+        + (f"effort: {role.claude_effort}\n" if role.claude_effort else "")
+        + "---\n\n"
         + _banner(role)
         + role.body
     )
