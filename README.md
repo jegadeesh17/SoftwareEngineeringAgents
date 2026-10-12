@@ -47,7 +47,11 @@ You <──> ORCHESTRATOR (the only agent that talks to you)
           ├─> task-planner ───────────> docs/TASKS.json (M1 MVP -> M2 Core -> M3 Polish)
           │
           5. Setup: checks your tools, lists the accounts and API keys the plan
-             needs (with cost), writes .env.example; you fill in .env yourself
+             needs (with cost), writes .env.example
+          6. Walkthrough: docs/WALKTHROUGH.md shows how the app works for you,
+             the architecture diagram and the milestone plan
+             STOPS: "Does this match what you want?"  <- no code before your yes
+             then you fill in .env yourself
           │
           │   for each task:
           ├─> backend-developer / frontend-developer / platform-engineer ──> write the code (by task owner)

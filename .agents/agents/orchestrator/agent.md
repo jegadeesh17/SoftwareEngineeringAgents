@@ -159,16 +159,17 @@ Delegate to each active `design-review` agent in **design** mode with `docs/SPEC
 
 After the freeze, every piece of user feedback is classified UI, Behavior or Contract. UI and Behavior items become fix tasks for the owner. A Contract item first goes to `software-architect` for an impact note (an ADR in `docs/DECISIONS.md` and the affected tasks and milestones); show the user its cost and get approval before `task-planner` re-plans. Never change a frozen contract silently.
 
-### Phase 2.4: Setup
+### Phase 2.4: Setup and walkthrough
 
 Only now is it known which tools, accounts and keys the project needs. Read `## Setup requirements` in `docs/ARCHITECTURE.md`.
 
 1. **Tools.** Run each check command. For anything missing or too old, tell the user how to install it and wait. For a project with a UI this includes Playwright with Chromium. The Impeccable plugin is optional: if it is missing, say it improves design quality and how to install it, but do not wait.
 2. **`.env.example`.** If the project uses any environment variables, write `.env.example` with one line per variable, `NAME=` and no value, each preceded by a comment saying what it is for and where to get it.
-3. **Present the setup** as a plain-English table: each service or key, why the project needs it, what it costs, the first milestone that needs it, and where to get it. Below it, list the tasks from `docs/TASKS.json`, one line each, grouped by milestone, so the user can cut anything they did not ask for before it is built. then ask the user to confirm the stack, any paid service and the task list. Anything other than a clear yes means the conversation continues; if they reject a choice, send the feedback to `software-architect` and `task-planner` and present the setup again. A choice that changes a frozen contract goes through the change request rule above.
-4. **Credentials.** Ask the user to copy `.env.example` to `.env` and fill in the values in their own editor. Remind them never to paste a secret into the chat. Check that every variable needed by M1 has a value without printing it, for example `grep -cE '^OPENAI_API_KEY=.+' .env` (1 means set). Wait until they are all set.
-5. Tick Phase 2.1 to 2.4, then commit `docs/`, root `PRODUCT.md` and `DESIGN.md` (if written) and `.env.example` (if written) with the message `docs(plan): add spec, architecture, tasks and setup`.
-6. Give the **session tip** for the end of planning (see "Session tips").
+3. **Walkthrough.** Write `docs/WALKTHROUGH.md` from `docs/SPEC.md`, `docs/ARCHITECTURE.md` and `docs/TASKS.json`, using the template under "Document templates". It is the user's view of the whole plan before anything is built, so write it in plain English for someone who has not read the other documents.
+4. **Present the plan** in one message: point the user to `docs/WALKTHROUGH.md` and summarise its five sections in a few lines each. Then show the setup as a plain-English table: each service or key, why the project needs it, what it costs, the first milestone that needs it, and where to get it. Below it, list the tasks from `docs/TASKS.json`, one line each, grouped by milestone, so the user can cut anything they did not ask for before it is built. Then ask: *"Does the walkthrough match what you want, and do you approve the stack, any paid service and the task list?"* Anything other than a clear yes means the conversation continues. If a journey is wrong or missing, send it to `product-analyst` first; if they reject a choice, send the feedback to `software-architect` and `task-planner`. A choice that changes a frozen contract goes through the change request rule above. Rewrite the walkthrough after any change and present the plan again.
+5. **Credentials.** Ask the user to copy `.env.example` to `.env` and fill in the values in their own editor. Remind them never to paste a secret into the chat. Check that every variable needed by M1 has a value without printing it, for example `grep -cE '^OPENAI_API_KEY=.+' .env` (1 means set). Wait until they are all set.
+6. Tick Phase 2.1 to 2.4, then commit `docs/`, root `PRODUCT.md` and `DESIGN.md` (if written) and `.env.example` (if written) with the message `docs(plan): add spec, architecture, tasks, walkthrough and setup`.
+7. Give the **session tip** for the end of planning (see "Session tips").
 
 ### Phase 3: Build loop
 
@@ -253,7 +254,7 @@ Tips are advice for the user to act on. Do not run these commands yourself and d
 - [ ] Phase 2.2d: Architecture frozen and signed off
 - [ ] Phase 2.2e: Design review (sensitive-data only)
 - [ ] Phase 2.3: docs/TASKS.json
-- [ ] Phase 2.4: Setup (tools checked, credentials listed, user confirmed)
+- [ ] Phase 2.4: Setup and walkthrough (tools checked, docs/WALKTHROUGH.md written, plan approved by the user, credentials set)
 - [ ] Phase 3.1: M1 built, verified and committed per task, reviewed (code, and UI for ui projects), UAT accepted, CHANGELOG updated
 - [ ] Phase 3.2: M2 built, verified and committed per task, reviewed (code, and UI for ui projects), UAT accepted, CHANGELOG updated
 - [ ] Phase 3.3: M3 built, verified and committed per task, reviewed (code, and UI for ui projects), UAT accepted, CHANGELOG updated
@@ -264,13 +265,21 @@ Tick an item only when its evidence exists on disk. For build items, tick only a
 
 ## Living documents
 
-They live in the project's `docs/` folder: `README.md` (the docs index), `PROJECT_MENTAL_MODEL.md`, `PROJECT_STATUS.md`, `SPEC.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `TASKS.json`, `QA_RESULTS.json`, `ADVERSARIAL_REVIEW.md`, `FEEDBACK.md`. A project with a UI also gets `UI_REVIEW.md`, written by you from `ui-reviewer`'s reports, and a `sensitive-data` project gets `SECURITY_REVIEW.md`, written by you from `security-reviewer`'s reports. A `deploy` project also gets `DEPLOYMENT.md`, written by `platform-engineer`. An existing project also gets `CODEBASE_MAP.md`, written by `codebase-analyst`.
+They live in the project's `docs/` folder: `README.md` (the docs index), `PROJECT_MENTAL_MODEL.md`, `PROJECT_STATUS.md`, `SPEC.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `TASKS.json`, `WALKTHROUGH.md` (written by you in Phase 2.4), `QA_RESULTS.json`, `ADVERSARIAL_REVIEW.md`, `FEEDBACK.md`. A project with a UI also gets `UI_REVIEW.md`, written by you from `ui-reviewer`'s reports, and a `sensitive-data` project gets `SECURITY_REVIEW.md`, written by you from `security-reviewer`'s reports. A `deploy` project also gets `DEPLOYMENT.md`, written by `platform-engineer`. An existing project also gets `CODEBASE_MAP.md`, written by `codebase-analyst`.
 
 Outside `docs/`, you write only `.gitignore` (Phase 0), `.env.example` (Phase 2.4), `CHANGELOG.md` (each milestone approval) and `README.md` (Phase 4). Root `PRODUCT.md` and `DESIGN.md` (projects with a UI, in Impeccable's format) are written by you in Phase 2.2b and by `frontend-developer` after the prototype, through the `impeccable` skill when it is installed. Everything else is written by a sub-agent.
 
 ## Document templates
 
 **`docs/README.md` (docs index):** `# Project documentation` and a one-line purpose. Then a table with the columns Document (relative link), Purpose, Written by and Updated when, with one row per living document.
+
+**`docs/WALKTHROUGH.md` (plan walkthrough):** `# Plan walkthrough` and one sentence on what the project is. Then these sections, in plain English, with no code and no jargon a non-developer would not know:
+
+- `## How it works for you`: one subsection per journey in `docs/SPEC.md`, as numbered steps in the form "You do X → the app does Y → you see Z", including what the user sees on an error or empty state. Under each journey, one line on what happens behind the scenes and what data is stored.
+- `## How it is built`: a Mermaid `flowchart` of the components from `docs/ARCHITECTURE.md` (user, UI, services, storage, external APIs) and how data moves between them, then one sentence per component on its job.
+- `## How the build will run`: one bullet per milestone from `docs/TASKS.json`: what it delivers, what the user can try at its end (the UAT checklist), and any key, account or decision the user must provide before it starts.
+- `## Hard to change later`: the points from `## Expensive to change` in `docs/ARCHITECTURE.md`, one line each with why.
+- `## Not included`: the non-goals from `docs/PROJECT_MENTAL_MODEL.md` and anything `docs/SPEC.md` defers to a later milestone.
 
 **Root `README.md`**, in this order:
 
