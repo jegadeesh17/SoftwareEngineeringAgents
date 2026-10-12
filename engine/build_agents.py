@@ -22,7 +22,7 @@ CLAUDE_COMMAND_PATH = Path("templates") / "claude" / "orchestrate.md"
 GENERATED_MARKER = "<!-- GENERATED from agents/"
 
 ALLOWED_KEYS = {
-    "description", "claude_tools", "antigravity_tools", "main_agent", "claude_model",
+    "description", "claude_tools", "antigravity_tools", "main_agent", "claude_model", "claude_effort",
     "runs_for", "delegate_when", "produces", "slots", "claude_skills",
 }
 # Shared prompt fragments in agents/shared/, inlined so every tool gets them without an install
@@ -35,6 +35,8 @@ SLOTS = ("discovery", "pipeline", "design-review", "task-owner", "milestone-revi
 TEAM_TABLE_MARKER = "<!-- TEAM_TABLE -->"
 # Claude Code model aliases; Antigravity output always inherits the session model
 CLAUDE_MODELS = ("inherit", "opus", "sonnet", "haiku")
+# Claude Code reasoning effort levels; omitted means the session effort applies
+CLAUDE_EFFORTS = ("low", "medium", "high", "xhigh", "max")
 ROLE_NAME = re.compile(r"[a-z][a-z0-9-]*")
 # Sub-agents are installed globally, so keep other sessions from routing unrelated work to them
 SUBAGENT_SCOPE = " Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
@@ -49,6 +51,7 @@ class Role:
     claude_tools: Optional[List[str]] = None
     main_agent: bool = False
     claude_model: str = "inherit"
+    claude_effort: Optional[str] = None
     runs_for: str = "always"
     delegate_when: str = ""
     produces: str = ""
@@ -123,6 +126,11 @@ def load_roles(source_dir: Path) -> List[Role]:
         claude_model = entry.get("claude_model", "inherit")
         if claude_model not in CLAUDE_MODELS:
             raise ValueError(f"role '{name}': 'claude_model' must be one of {', '.join(CLAUDE_MODELS)}")
+        if main_agent and "claude_effort" in entry:
+            raise ValueError(f"role '{name}': 'claude_effort' applies to sub-agents only")
+        claude_effort = entry.get("claude_effort")
+        if claude_effort is not None and claude_effort not in CLAUDE_EFFORTS:
+            raise ValueError(f"role '{name}': 'claude_effort' must be one of {', '.join(CLAUDE_EFFORTS)}")
         if main_agent and "claude_skills" in entry:
             raise ValueError(f"role '{name}': 'claude_skills' applies to sub-agents only")
         if "claude_skills" in entry and not _is_string_list(entry["claude_skills"]):
@@ -151,6 +159,7 @@ def load_roles(source_dir: Path) -> List[Role]:
             claude_tools=list(entry["claude_tools"]) if "claude_tools" in entry else None,
             main_agent=main_agent,
             claude_model=claude_model,
+            claude_effort=claude_effort,
             runs_for=entry.get("runs_for", "always"),
             delegate_when=entry.get("delegate_when", ""),
             produces=entry.get("produces", ""),
@@ -201,6 +210,7 @@ def render_claude_agent(role: Role) -> str:
         f"description: {_yaml_string(_description(role))}\n"
         f"tools: {', '.join(role.claude_tools)}\n"
         f"model: {role.claude_model}\n"
+        + (f"effort: {role.claude_effort}\n" if role.claude_effort else "")
         + (f"skills: {', '.join(role.claude_skills)}\n" if role.claude_skills else "")
         + "---\n\n"
         + _banner(role)
