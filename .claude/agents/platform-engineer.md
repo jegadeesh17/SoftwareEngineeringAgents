@@ -2,7 +2,8 @@
 name: platform-engineer
 description: "PlatformEngineer: Implements exactly one CI, container or deployment-config task (owner platform-engineer) from docs/TASKS.json and writes the deploy runbook in docs/DEPLOYMENT.md. Never deploys. Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Write, Edit, Glob, Grep, Bash
-model: inherit
+model: haiku
+effort: high
 ---
 
 <!-- GENERATED from agents/platform-engineer.md — edit the source and run python -m engine.build_agents -->

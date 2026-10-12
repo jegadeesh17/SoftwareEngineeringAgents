@@ -2,7 +2,8 @@
 name: codebase-analyst
 description: "CodebaseAnalyst: Maps an existing project into docs/CODEBASE_MAP.md (stack, layout, conventions, UI inventory, test commands, baseline test result, existing behavior). Use before planning when the workspace already contains code. Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Write, Edit, Glob, Grep, Bash
-model: sonnet
+model: haiku
+effort: xhigh
 ---
 
 <!-- GENERATED from agents/codebase-analyst.md — edit the source and run python -m engine.build_agents -->

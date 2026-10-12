@@ -3,9 +3,15 @@
 # claude_tools uses Claude Code tool names; antigravity_tools uses Antigravity tool names.
 # main_agent = true marks the orchestrator: an Antigravity main agent and the Claude Code /orchestrate command.
 # claude_model (optional, sub-agents only): inherit, opus, sonnet or haiku for Claude Code; default inherit.
+# claude_effort (optional, sub-agents only): low, medium, high, xhigh or max for Claude Code; omitted means the session effort.
 # claude_skills (optional, sub-agents only): skills Claude Code preloads at startup, "plugin:skill" for plugin skills. Missing ones are skipped.
 # A prompt can contain <!-- INCLUDE name --> to inline agents/shared/name.md (used for the UI craft standard).
-# Simple roles use faster models; judgment-heavy roles inherit the user's session model.
+# Model policy (Artificial Analysis, Oct 2026). Upgrade efficiency E = % intelligence gained per 100% of cost+time
+# paid (log scale, cost and time weighted equally). The efficient path is Haiku high -> Haiku xhigh (E 11.6)
+# -> Opus medium (E 10.6) -> Opus high (E 7.3). Sonnet is off it: Haiku xhigh matches Sonnet medium for a quarter
+# of the cost, and Opus medium is smarter and faster than Sonnet high for 52% more. Each role upgrades while E clears
+# its hurdle, set by how far its mistakes travel: checked next step (Haiku high), bounded fix loop (Haiku xhigh),
+# propagates to every task or ships past a gate (Opus medium), invalidates the whole design (Opus high).
 # Sub-agents also declare the registry keys below; the orchestrator's team table is generated from them.
 #   runs_for      project fact that activates the role: always, existing-code, ui, sensitive-data or deploy
 #   delegate_when when the orchestrator delegates to it
@@ -20,7 +26,8 @@ main_agent = true
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command", "invoke_subagent"]
 
 [roles.codebase-analyst]
-claude_model = "sonnet"
+claude_model = "haiku"
+claude_effort = "xhigh"
 description = "Maps an existing project into docs/CODEBASE_MAP.md (stack, layout, conventions, UI inventory, test commands, baseline test result, existing behavior). Use before planning when the workspace already contains code."
 runs_for = "existing-code"
 slots = ["discovery"]
@@ -30,7 +37,8 @@ claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
 
 [roles.product-analyst]
-claude_model = "sonnet"
+claude_model = "opus"
+claude_effort = "medium"
 description = "Turns docs/PROJECT_MENTAL_MODEL.md into docs/SPEC.md with user journeys and Given/When/Then acceptance criteria. Use after the user approves the scope."
 runs_for = "always"
 slots = ["pipeline"]
@@ -40,6 +48,8 @@ claude_tools = ["Read", "Write", "Edit", "Glob", "Grep"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name"]
 
 [roles.software-architect]
+claude_model = "opus"
+claude_effort = "high"
 description = "Designs the stack, components, data models, interfaces and test command in docs/ARCHITECTURE.md (a draft, then frozen after the prototype is accepted) and records decisions in docs/DECISIONS.md. Use after docs/SPEC.md exists."
 runs_for = "always"
 slots = ["pipeline"]
@@ -49,7 +59,8 @@ claude_tools = ["Read", "Write", "Edit", "Glob", "Grep"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name"]
 
 [roles.task-planner]
-claude_model = "sonnet"
+claude_model = "opus"
+claude_effort = "medium"
 description = "Breaks the architecture into ordered, testable tasks with an owner across milestones (three for a new project, one to three for a change to an existing one) in docs/TASKS.json. Use after docs/ARCHITECTURE.md is frozen."
 runs_for = "always"
 slots = ["pipeline"]
@@ -59,6 +70,8 @@ claude_tools = ["Read", "Write", "Edit", "Glob", "Grep"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name"]
 
 [roles.backend-developer]
+claude_model = "haiku"
+claude_effort = "xhigh"
 description = "Implements exactly one non-UI task (owner backend-developer) from docs/TASKS.json against the contracts in docs/ARCHITECTURE.md, or fixes it using failure output or review findings."
 runs_for = "always"
 slots = ["task-owner"]
@@ -68,6 +81,8 @@ claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
 
 [roles.frontend-developer]
+claude_model = "haiku"
+claude_effort = "xhigh"
 description = "Implements exactly one UI task (owner frontend-developer), including the Phase 2 prototype, in a new or existing frontend, using the built-in UI craft standard (plus Impeccable when installed) and DESIGN.md, or fixes it using failure output or review findings."
 runs_for = "ui"
 slots = ["task-owner"]
@@ -78,7 +93,8 @@ claude_skills = ["impeccable:impeccable"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
 
 [roles.qa-tester]
-claude_model = "sonnet"
+claude_model = "haiku"
+claude_effort = "high"
 description = "Writes and runs automated tests for one task and records the exact command and exit code in docs/QA_RESULTS.json."
 runs_for = "always"
 slots = ["pipeline"]
@@ -88,6 +104,8 @@ claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
 
 [roles.adversarial-reviewer]
+claude_model = "opus"
+claude_effort = "medium"
 description = "Read-only reviewer that audits a finished milestone for edge cases, silent failures, contract drift and security issues, and returns APPROVED or REJECTED."
 runs_for = "always"
 slots = ["milestone-review"]
@@ -97,6 +115,8 @@ claude_tools = ["Read", "Glob", "Grep", "Bash"]
 antigravity_tools = ["view_file", "grep_search", "list_dir", "find_by_name", "run_command"]
 
 [roles.ui-reviewer]
+claude_model = "opus"
+claude_effort = "medium"
 description = "Read-only reviewer that screenshots the running UI at desktop and mobile widths (a before baseline for existing projects, or a milestone review), applies Impeccable audit and critique, checks DESIGN.md and WCAG 2.2 AA, and returns APPROVED or REJECTED."
 runs_for = "ui"
 slots = ["discovery", "milestone-review"]
@@ -107,6 +127,8 @@ claude_skills = ["impeccable:impeccable"]
 antigravity_tools = ["view_file", "grep_search", "list_dir", "find_by_name", "run_command"]
 
 [roles.platform-engineer]
+claude_model = "haiku"
+claude_effort = "high"
 description = "Implements exactly one CI, container or deployment-config task (owner platform-engineer) from docs/TASKS.json and writes the deploy runbook in docs/DEPLOYMENT.md. Never deploys."
 runs_for = "deploy"
 slots = ["task-owner"]
@@ -116,6 +138,8 @@ claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
 
 [roles.security-reviewer]
+claude_model = "opus"
+claude_effort = "medium"
 description = "Read-only security reviewer with two modes: design (reviews the architecture's security and data section) and milestone (audits changed code for authorization, injection, secrets and data exposure), and returns APPROVED or REJECTED."
 runs_for = "sensitive-data"
 slots = ["design-review", "milestone-review"]

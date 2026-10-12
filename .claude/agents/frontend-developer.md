@@ -2,7 +2,8 @@
 name: frontend-developer
 description: "FrontendDeveloper: Implements exactly one UI task (owner frontend-developer), including the Phase 2 prototype, in a new or existing frontend, using the built-in UI craft standard (plus Impeccable when installed) and DESIGN.md, or fixes it using failure output or review findings. Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Write, Edit, Glob, Grep, Bash, Skill
-model: inherit
+model: haiku
+effort: xhigh
 skills: impeccable:impeccable
 ---
 
