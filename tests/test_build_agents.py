@@ -244,6 +244,17 @@ def test_claude_effort_follows_model_in_claude_frontmatter_only(tmp_path):
     assert "effort:" not in agy
 
 
+def test_orchestrator_model_and_effort_go_into_the_command_frontmatter(tmp_path):
+    make_source(tmp_path, ORCH_TOML + 'claude_model = "opus"\nclaude_effort = "high"\n', {"orchestrator": ORCH_BODY})
+
+    assert build_agents.main([], root=tmp_path) == 0
+
+    command = (tmp_path / "templates" / "claude" / "orchestrate.md").read_text(encoding="utf-8")
+    agy = (tmp_path / ".agents" / "agents" / "orchestrator" / "agent.md").read_text(encoding="utf-8")
+    assert "\nmodel: opus\neffort: high\n---\n" in command
+    assert "\nmodel: inherit\n" in agy and "effort:" not in agy
+
+
 def test_shared_fragment_is_inlined_where_included(tmp_path):
     make_source(tmp_path, QA_TOML, {"qa-tester": "# QA\n\n<!-- INCLUDE rules -->\n"})
     (tmp_path / "agents" / "shared").mkdir()
@@ -336,12 +347,8 @@ def test_team_ships_the_standard_documentation_set():
          "invalid role name 'QA Tester'"),
         (QA_TOML + 'claude_model = "gpt-4"\n', "qa-tester",
          "role 'qa-tester': 'claude_model' must be one of inherit, opus, sonnet, haiku"),
-        (ORCH_TOML + 'claude_model = "haiku"\n', "orchestrator",
-         "role 'orchestrator': 'claude_model' applies to sub-agents only"),
         (QA_TOML + 'claude_effort = "turbo"\n', "qa-tester",
          "role 'qa-tester': 'claude_effort' must be one of low, medium, high, xhigh, max"),
-        (ORCH_TOML + 'claude_effort = "high"\n', "orchestrator",
-         "role 'orchestrator': 'claude_effort' applies to sub-agents only"),
         (QA_TOML + 'claude_skills = []\n', "qa-tester",
          "role 'qa-tester': 'claude_skills' must be a non-empty list of strings"),
         (ORCH_TOML + 'claude_skills = ["x"]\n', "orchestrator",
