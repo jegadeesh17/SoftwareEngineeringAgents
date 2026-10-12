@@ -2,7 +2,8 @@
 name: adversarial-reviewer
 description: "AdversarialReviewer: Read-only reviewer that audits a finished milestone for edge cases, silent failures, contract drift and security issues, and returns APPROVED or REJECTED. Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Glob, Grep, Bash
-model: inherit
+model: opus
+effort: medium
 ---
 
 <!-- GENERATED from agents/adversarial-reviewer.md — edit the source and run python -m engine.build_agents -->

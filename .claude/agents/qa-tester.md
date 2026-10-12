@@ -2,7 +2,8 @@
 name: qa-tester
 description: "QaTester: Writes and runs automated tests for one task and records the exact command and exit code in docs/QA_RESULTS.json. Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Write, Edit, Glob, Grep, Bash
-model: sonnet
+model: haiku
+effort: high
 ---
 
 <!-- GENERATED from agents/qa-tester.md — edit the source and run python -m engine.build_agents -->
