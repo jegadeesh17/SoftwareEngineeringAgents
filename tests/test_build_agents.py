@@ -233,6 +233,17 @@ def test_claude_model_sets_claude_frontmatter_but_antigravity_inherits(tmp_path)
     assert "\nmodel: inherit\n" in agy
 
 
+def test_claude_effort_follows_model_in_claude_frontmatter_only(tmp_path):
+    make_source(tmp_path, QA_TOML + 'claude_model = "sonnet"\nclaude_effort = "medium"\n', {"qa-tester": "# QA\n"})
+
+    assert build_agents.main([], root=tmp_path) == 0
+
+    claude = (tmp_path / ".claude" / "agents" / "qa-tester.md").read_text(encoding="utf-8")
+    agy = (tmp_path / ".agents" / "agents" / "qa-tester" / "agent.md").read_text(encoding="utf-8")
+    assert "\nmodel: sonnet\neffort: medium\n---\n" in claude
+    assert "effort:" not in agy
+
+
 def test_shared_fragment_is_inlined_where_included(tmp_path):
     make_source(tmp_path, QA_TOML, {"qa-tester": "# QA\n\n<!-- INCLUDE rules -->\n"})
     (tmp_path / "agents" / "shared").mkdir()
@@ -327,6 +338,10 @@ def test_team_ships_the_standard_documentation_set():
          "role 'qa-tester': 'claude_model' must be one of inherit, opus, sonnet, haiku"),
         (ORCH_TOML + 'claude_model = "haiku"\n', "orchestrator",
          "role 'orchestrator': 'claude_model' applies to sub-agents only"),
+        (QA_TOML + 'claude_effort = "turbo"\n', "qa-tester",
+         "role 'qa-tester': 'claude_effort' must be one of low, medium, high, xhigh, max"),
+        (ORCH_TOML + 'claude_effort = "high"\n', "orchestrator",
+         "role 'orchestrator': 'claude_effort' applies to sub-agents only"),
         (QA_TOML + 'claude_skills = []\n', "qa-tester",
          "role 'qa-tester': 'claude_skills' must be a non-empty list of strings"),
         (ORCH_TOML + 'claude_skills = ["x"]\n', "orchestrator",
