@@ -541,3 +541,21 @@ def test_ui_roles_carry_the_craft_standard_and_preload_impeccable():
             assert role.claude_skills == ["impeccable:impeccable"], name
         else:
             assert "## UI craft standard" not in role.body, name
+
+
+def test_orchestrator_keeps_a_team_retro_outside_the_project():
+    body = _real_roles()["orchestrator"].body
+
+    for text in ("## Team retro", "~/.se-agents/retros/", "retro-template.md", "source.json",
+                 ".se-agents/RETRO.md", "scripts/contribute_retro.py", "went-well", "user-correction",
+                 "hand-off-gap", "milestones_accepted", "milestones_planned",
+                 "scripts/contribute_retro.py <retro path>"):
+        assert text in body, text
+    assert "never reconstructed later" not in body
+
+
+def test_orchestrator_starts_a_retro_for_projects_begun_before_retros():
+    body = _real_roles()["orchestrator"].body
+
+    assert "if none is recorded" in body
+    assert "`.se-agents/RETRO.md`, which is gitignored" in body

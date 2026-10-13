@@ -4,7 +4,8 @@ Installs the generated agent team so it works in any project folder:
 1. Claude Code sub-agents   -> ~/.claude/agents/<role>.md
 2. Claude Code /orchestrate -> ~/.claude/commands/orchestrate.md
 3. Antigravity agents       -> ~/.gemini/config/agents/<role>/agent.md
-4. Antigravity global rule 'nomenclature-standards.md' (opt-in via --global-rules)
+4. Team retro template      -> ~/.se-agents/retro-template.md, plus ~/.se-agents/source.json (this clone and commit)
+5. Antigravity global rule 'nomenclature-standards.md' (opt-in via --global-rules)
 
 Files this installer wrote before are updated. Files with your own changes are kept
 unless --force is passed. Nothing in your home directory is ever deleted.
@@ -13,6 +14,7 @@ unless --force is passed. Nothing in your home directory is ever deleted.
 import argparse
 import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -34,6 +36,9 @@ LEGACY_HASHES = {
     ".claude/commands/orchestrate.md": {"95aa56d8ff3899f7c54a24cacc2e92791362e3269ee55e4b1143f2c3e6842baf"},
 }
 RULE_SOURCE = Path(".agents") / "rules" / "nomenclature-standards.md"
+RETRO_TEMPLATE_SOURCE = Path("templates") / "retro.md"
+RETRO_TEMPLATE_HOME = Path(".se-agents") / "retro-template.md"
+SOURCE_INFO_PATH = Path(".se-agents") / "source.json"
 
 
 def _sha256(text: str) -> str:
@@ -58,6 +63,43 @@ def _save_manifest(home: Path, manifest: Dict[str, str]) -> None:
     path = home / MANIFEST_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
+
+
+def _repo_commit(root: Path) -> str:
+    """Short commit of this clone, read from .git directly because the installer never shells out."""
+    git = root / ".git"
+    try:
+        if git.is_file():
+            # A worktree or submodule: .git holds "gitdir: <path>", and shared refs live in its commondir
+            pointer = git.read_text(encoding="utf-8").strip()
+            if not pointer.startswith("gitdir: "):
+                return "unknown"
+            git = (root / pointer[len("gitdir: "):]).resolve()
+        common = git
+        if (git / "commondir").is_file():
+            common = (git / (git / "commondir").read_text(encoding="utf-8").strip()).resolve()
+        head = (git / "HEAD").read_text(encoding="utf-8").strip()
+        sha = head
+        if head.startswith("ref: "):
+            ref = head[len("ref: "):]
+            loose = next((d / ref for d in (git, common) if (d / ref).is_file()), None)
+            if loose is not None:
+                sha = loose.read_text(encoding="utf-8").strip()
+            else:
+                sha = next((line.split(" ")[0] for line in (common / "packed-refs").read_text(encoding="utf-8").splitlines()
+                            if line.endswith(" " + ref)), "")
+    except OSError:
+        return "unknown"
+    return sha[:7] if re.fullmatch(r"[0-9a-f]{40,64}", sha) else "unknown"
+
+
+def _write_source_info(home: Path, root: Path) -> None:
+    """Record which clone and commit was installed; the orchestrator stamps it into each retro."""
+    path = home / SOURCE_INFO_PATH
+    path.parent.mkdir(parents=True, exist_ok=True)
+    info = {"repo": str(root.resolve()), "commit": _repo_commit(root)}
+    path.write_text(json.dumps(info, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
+    print(f"      [OK] Recorded: {path} (commit {info['commit']})")
 
 
 def install_text(content: str, home: Path, rel: Path, force: bool, manifest: Dict[str, str]) -> bool:
@@ -120,9 +162,9 @@ def main(argv: Optional[List[str]] = None, home: Optional[Path] = None, root: Op
     results = []
 
     sections = [
-        ("[1/4] Claude Code sub-agents...", lambda rel: rel.parent == Path(".claude") / "agents"),
-        ("[2/4] Claude Code /orchestrate command...", lambda rel: rel.parent == Path(".claude") / "commands"),
-        ("[3/4] Antigravity agents...", lambda rel: rel.parts[:3] == (".gemini", "config", "agents")),
+        ("[1/5] Claude Code sub-agents...", lambda rel: rel.parent == Path(".claude") / "agents"),
+        ("[2/5] Claude Code /orchestrate command...", lambda rel: rel.parent == Path(".claude") / "commands"),
+        ("[3/5] Antigravity agents...", lambda rel: rel.parts[:3] == (".gemini", "config", "agents")),
     ]
     for title, belongs in sections:
         print(f"\n{title}")
@@ -130,10 +172,10 @@ def main(argv: Optional[List[str]] = None, home: Optional[Path] = None, root: Op
             results.append(install_text(installs[rel], user_home, rel, args.force, manifest))
 
     # Files we installed earlier for roles that no longer exist: report them, never delete
-    rule_key = (Path(".gemini") / "config" / "rules" / RULE_SOURCE.name).as_posix()
+    not_agents = {(Path(".gemini") / "config" / "rules" / RULE_SOURCE.name).as_posix(), RETRO_TEMPLATE_HOME.as_posix()}
     removed = sorted(
         key for key in manifest
-        if key != rule_key and Path(key) not in installs and (user_home / key).exists()
+        if key not in not_agents and Path(key) not in installs and (user_home / key).exists()
     )
     if removed:
         print("\n      [i] Installed earlier but no longer part of the team (left in place; delete if unwanted):")
@@ -145,7 +187,12 @@ def main(argv: Optional[List[str]] = None, home: Optional[Path] = None, root: Op
         print(f"      [!] Found the old 'orchestrator' skill at {old_skill}.")
         print("          The orchestrator agent replaces it; delete that folder to avoid two orchestrators.")
 
-    print("\n[4/4] Antigravity global naming rule...")
+    print("\n[4/5] Team retro template...")
+    template = build_agents.normalize_newlines((root / RETRO_TEMPLATE_SOURCE).read_text(encoding="utf-8"))
+    results.append(install_text(template, user_home, RETRO_TEMPLATE_HOME, args.force, manifest))
+    _write_source_info(user_home, root)
+
+    print("\n[5/5] Antigravity global naming rule...")
     if not args.global_rules:
         print("      [-] Not installed: this rule applies to every project (re-run with --global-rules to install).")
     else:

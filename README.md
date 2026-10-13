@@ -24,6 +24,7 @@ AI coding agents tend to fail in predictable ways. Each one has a specific guard
 | Agents approve what you would reject | **You accept, not the agents.** For a UI, you click through a prototype before the architecture is frozen, and you test every milestone yourself before it counts as done. Feedback is sorted into UI, Behavior or Contract, and only Contract changes touch the architecture. |
 | Generic, "AI-looking" UI | **Built-in design standard.** The frontend developer and UI reviewer carry their own UI craft rules and a refuse list of AI-looking patterns, and preload the [Impeccable](https://impeccable.style) skill on top when it is installed. Screenshots are reviewed at desktop and mobile widths. |
 | Breaks code it didn't write | **Existing-project mode.** A codebase analyst maps the stack, conventions and a baseline test run first. Work happens on its own branch, and the reviewer checks for regressions against the starting commit. |
+| The team never learns from its mistakes | **Self-retro.** Each build leaves a retro in `~/.se-agents/retros/`, outside the project's git: what went well, every mistake, bug and failure, and a score for each agent backed by evidence. You can contribute it by pull request, and the maintainers judge all retros to fix the team. |
 
 ## How it works
 
@@ -98,6 +99,7 @@ This installs:
 - `~/.claude/agents/*.md`: the 11 Claude Code sub-agents.
 - `~/.claude/commands/orchestrate.md`: the `/orchestrate` command.
 - `~/.gemini/config/agents/*/agent.md`: the orchestrator and 11 sub-agents for Antigravity.
+- `~/.se-agents/retro-template.md` and `~/.se-agents/source.json`: the retro format and which version of the team you installed.
 
 The installer records what it wrote in `~/.se-agents/installed.json`. Re-running it after `git pull` updates files it installed before and keeps any you've edited. It exits with an error if it had to skip a file.
 
@@ -128,6 +130,18 @@ The orchestrator asks which kind of change it is, and every agent follows the sa
 | `Redesign` | A new look and UX, same behavior and backend | "Before" screenshots first; screens convert one at a time; you compare before and after; behavior parity is checked |
 | `Transformation` | A stack or architecture migration | Characterization tests pin today's behavior first; old and new run side by side while journeys migrate one at a time; deleting old code needs your explicit yes |
 
+## Retros: help the team improve
+
+Every build leaves a short retro on your machine, in `~/.se-agents/retros/<project>-<date>.md`, outside the project and its git. The orchestrator logs what went well and every mistake, bug and failure as it happens. At handover it scores each agent against a fixed rubric, citing evidence. The retro describes the team's behavior, never your product: no names, code, paths or secrets.
+
+In Claude Code the first write outside the project asks for permission. Approve it, or add `"Edit(~/.se-agents/**)"` to `permissions.allow` in `~/.claude/settings.json`.
+
+To share a retro, run this from your clone:
+
+    python scripts/contribute_retro.py
+
+It checks the file's format and scans it for paths, emails, URLs, hostnames, IP addresses and keys. It then copies the retro into `retros/community/` under an anonymous name, on a new branch cut from this repository's `main` (your own commits stay out of it), and asks before opening a pull request. The maintainers run `/judge-retros` over all contributed retros to find recurring problems and change the agents.
+
 ## Engineering decisions
 
 - **The first version was thrown away.** It was a Python pipeline that simulated the agents. Without API keys it could not do real work, so it was removed ([`3f4f24f`](https://github.com/jegadeesh17/SoftwareEngineeringAgents/commit/3f4f24f)) in favor of each tool's native sub-agents. The design is in [docs/superpowers/specs](docs/superpowers/specs/2026-09-28-native-subagents-design.md).
@@ -135,6 +149,7 @@ The orchestrator asks which kind of change it is, and every agent follows the sa
 - **Model tiering.** Each role runs on the model Anthropic positions for its kind of work. Opus handles judgment: the orchestrator (at high effort), product analyst, architect, task planner, adversarial reviewer and security reviewer. Sonnet handles coding and visual review: the backend and frontend developers and the UI reviewer. Haiku handles read-heavy or downstream-verified work: the codebase analyst, QA tester and platform engineer. Each role's reasoning effort is pinned too. The orchestrator does the git work itself, since a sub-agent for a few git commands only adds waiting. A role's model and effort are one line each in [`agents/roles.toml`](agents/roles.toml). Antigravity agents use your session's model.
 - **Checked live, not assumed.** Antigravity enforces each agent's `tools` list. This was confirmed with CLI 1.2.12 by trying to call tools outside the list.
 - **A non-destructive installer.** It keeps a manifest of what it wrote, updates only its own files on reinstall, and never overwrites your edits without `--force`.
+- **The team judges itself.** Each retro scores every agent against a rubric anchored to counts (retries, rejected reviews, UAT defects), so an LLM judge scores evidence, not impressions. A repo-side judge clusters problems across retros, checks whether a later commit already fixed them, and proposes edits that a person applies.
 - **Tested.** pytest covers the generator, the installer and the rule format, including a drift check against the committed files. CI runs on Linux and Windows with Python 3.11 and 3.13.
 
 ## Fork it and make it yours

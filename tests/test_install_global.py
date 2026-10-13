@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import re
 import shutil
 import subprocess
@@ -194,3 +195,64 @@ def test_installer_notes_installed_roles_that_were_removed_from_the_team(tmp_pat
     assert "no longer part of the team" in out
     assert str(Path(".claude") / "agents" / "codebase-analyst.md") in out
     assert (home / ".claude" / "agents" / "codebase-analyst.md").exists()
+
+
+def test_installer_installs_retro_template_and_source_info(tmp_path, installer):
+    assert installer.main([], home=tmp_path) == 0
+
+    assert _text(tmp_path / ".se-agents" / "retro-template.md") == _text(ROOT / "templates" / "retro.md")
+    info = json.loads(_text(tmp_path / ".se-agents" / "source.json"))
+    assert Path(info["repo"]) == ROOT.resolve()
+    assert re.fullmatch(r"[0-9a-f]{7}|unknown", info["commit"])
+    manifest = json.loads(_text(tmp_path / ".se-agents" / "installed.json"))
+    assert ".se-agents/retro-template.md" in manifest
+    assert all(isinstance(value, str) for value in manifest.values())
+
+
+def test_installer_rerun_does_not_report_the_retro_template_as_removed(tmp_path, installer, capsys):
+    installer.main([], home=tmp_path)
+    capsys.readouterr()
+
+    assert installer.main([], home=tmp_path) == 0
+    assert "no longer part of the team" not in capsys.readouterr().out
+
+
+def test_installer_keeps_an_edited_retro_template(tmp_path, installer):
+    installer.main([], home=tmp_path)
+    template = tmp_path / ".se-agents" / "retro-template.md"
+    template.write_text("my own retro format\n", encoding="utf-8")
+
+    assert installer.main([], home=tmp_path) == 1
+    assert template.read_text(encoding="utf-8") == "my own retro format\n"
+
+
+def test_repo_commit_reads_git_files_without_running_git(tmp_path, installer):
+    git = tmp_path / ".git"
+    (git / "refs" / "heads").mkdir(parents=True)
+    (git / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
+    (git / "refs" / "heads" / "main").write_text("a" * 40 + "\n", encoding="utf-8")
+    assert installer._repo_commit(tmp_path) == "aaaaaaa"
+
+    (git / "refs" / "heads" / "main").unlink()
+    (git / "packed-refs").write_text("# pack-refs with: peeled\n" + "b" * 40 + " refs/heads/main\n", encoding="utf-8")
+    assert installer._repo_commit(tmp_path) == "bbbbbbb"
+
+    (git / "HEAD").write_text("c" * 40 + "\n", encoding="utf-8")
+    assert installer._repo_commit(tmp_path) == "ccccccc"
+    assert installer._repo_commit(tmp_path / "no-repo") == "unknown"
+
+
+def test_repo_commit_follows_a_worktree_git_file(tmp_path, installer):
+    # In a worktree, .git is a file pointing at .git/worktrees/<name>; branch refs live in the main .git
+    main_git = tmp_path / "main" / ".git"
+    worktree_git = main_git / "worktrees" / "wt"
+    worktree_git.mkdir(parents=True)
+    (main_git / "refs" / "heads").mkdir(parents=True)
+    (main_git / "refs" / "heads" / "feature").write_text("d" * 40 + "\n", encoding="utf-8")
+    (worktree_git / "HEAD").write_text("ref: refs/heads/feature\n", encoding="utf-8")
+    (worktree_git / "commondir").write_text("../..\n", encoding="utf-8")
+    checkout = tmp_path / "wt"
+    checkout.mkdir()
+    (checkout / ".git").write_text(f"gitdir: {worktree_git}\n", encoding="utf-8")
+
+    assert installer._repo_commit(checkout) == "ddddddd"
