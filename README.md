@@ -109,7 +109,7 @@ Options:
 
 Open an empty folder for a new project, or the folder of an existing one, then:
 
-- **Claude Code:** run `claude` and type `/orchestrate`.
+- **Claude Code:** run `claude --model opus --effort high` and type `/orchestrate`. The command switches to Opus at high effort only for the turn you type it, so start the session on it; otherwise the orchestrator asks you to restart.
 - **Antigravity:** run `agy --agent orchestrator`, or pick `orchestrator` in `/agents`.
 
 **Existing project.** The orchestrator detects code in the folder and switches mode. It asks what kind of change it is (`Feature`, `Fix`, `Refactor`, `Redesign` or `Transformation`, see below) instead of for a product vision, and it won't start with uncommitted changes in the tree. It creates a working branch and never commits to `main`. The codebase analyst then maps the stack, conventions and a baseline test run, and the team follows the project's own style and test runner. If the baseline is red, the orchestrator asks whether to fix it first or accept the named failures. It plans one to three milestones sized to the change, and at handover it points you to the branch to open a pull request from.
@@ -132,7 +132,7 @@ The orchestrator asks which kind of change it is, and every agent follows the sa
 
 - **The first version was thrown away.** It was a Python pipeline that simulated the agents. Without API keys it could not do real work, so it was removed ([`3f4f24f`](https://github.com/jegadeesh17/SoftwareEngineeringAgents/commit/3f4f24f)) in favor of each tool's native sub-agents. The design is in [docs/superpowers/specs](docs/superpowers/specs/2026-09-28-native-subagents-design.md).
 - **One source, two runtimes.** Each role is defined once in `agents/`. [`engine/build_agents.py`](engine/build_agents.py) renders it into the Claude Code and Antigravity formats, so the two cannot drift apart. `--check` fails CI if a generated file is stale, and Claude Code hooks in this repo block hand-edits to generated files.
-- **Model tiering.** Judgment-heavy roles (architect, developer, reviewer) inherit your session's model. Routine roles use a cheaper one: Sonnet for the analyst, planner and QA. The orchestrator does the git work itself, since a sub-agent for a few git commands only adds waiting. Each role's model is one line in [`agents/roles.toml`](agents/roles.toml).
+- **Model tiering.** Each role runs on the model Anthropic positions for its kind of work. Opus handles judgment: the orchestrator (at high effort), product analyst, architect, task planner, adversarial reviewer and security reviewer. Sonnet handles coding and visual review: the backend and frontend developers and the UI reviewer. Haiku handles read-heavy or downstream-verified work: the codebase analyst, QA tester and platform engineer. Each role's reasoning effort is pinned too. The orchestrator does the git work itself, since a sub-agent for a few git commands only adds waiting. A role's model and effort are one line each in [`agents/roles.toml`](agents/roles.toml). Antigravity agents use your session's model.
 - **Checked live, not assumed.** Antigravity enforces each agent's `tools` list. This was confirmed with CLI 1.2.12 by trying to call tools outside the list.
 - **A non-destructive installer.** It keeps a manifest of what it wrote, updates only its own files on reinstall, and never overwrites your edits without `--force`.
 - **Tested.** pytest covers the generator, the installer and the rule format, including a drift check against the committed files. CI runs on Linux and Windows with Python 3.11 and 3.13.
@@ -141,7 +141,7 @@ The orchestrator asks which kind of change it is, and every agent follows the sa
 
 This is a personal project, open-sourced so you can build your own team on it. Fork it rather than waiting on issues.
 
-1. Edit a role's metadata (description, tools, model) in `agents/roles.toml`, or its prompt in `agents/<role>.md`.
+1. Edit a role's metadata (description, tools, model, effort) in `agents/roles.toml`, or its prompt in `agents/<role>.md`.
 2. Regenerate: `python -m engine.build_agents`
 3. Test: `python -m pytest -q` (dev dependencies: `pip install -e ".[dev]"`)
 4. Install your version: `python scripts/install_global.py`
