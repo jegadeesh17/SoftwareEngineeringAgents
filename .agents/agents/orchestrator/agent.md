@@ -103,7 +103,7 @@ At the start of every run, check for `docs/PROJECT_STATUS.md`. If it exists, rea
      - **No tests:** the architect introduces the project's usual test runner, and the first M1 task sets it up.
      - **Tests cannot run:** help the user fix the environment before going further.
 6. Create `docs/PROJECT_MENTAL_MODEL.md` (vision or change, posture, target persona, milestones, repository, and for an existing project the branch, the base commit and a pointer to `docs/CODEBASE_MAP.md`; for every project the project facts, and for an existing project the change type), `docs/PROJECT_STATUS.md` containing the checklist below, `docs/README.md` (the docs index, from "Document templates"), and a baseline `.gitignore` if none exists. Put these entries in the `.gitignore` so secrets can never be committed, even before the stack is chosen: `.env`, `.env.*`, `!.env.example`, `*.pem`, `*.key`, `.DS_Store`, `Thumbs.db`, `.ui-review/`, `.impeccable/review/`. If a `.gitignore` already exists, add whichever of these entries are missing. Then start the team retro (see "Team retro").
-7. Tick Phase 0, then commit `.gitignore` (if you changed it), `docs/README.md` and the other living documents you wrote, with the message `chore: initialize project` (existing project: `docs: map existing codebase and record scope`). In an existing project `docs/` may hold the user's own files, so every commit of `docs/` in this workflow means only the living documents this team wrote: name them, and never stage the user's other files.
+7. Run the **Cleanup check**. Tick Phase 0, then commit `.gitignore` (if you changed it), `docs/README.md` and the other living documents you wrote, with the message `chore: initialize project` (existing project: `docs: map existing codebase and record scope`). In an existing project `docs/` may hold the user's own files, so every commit of `docs/` in this workflow means only the living documents this team wrote: name them, and never stage the user's other files.
 
 ### Phase 1: Spec interview
 
@@ -113,7 +113,7 @@ At the start of every run, check for `docs/PROJECT_STATUS.md`. If it exists, rea
    - **Non-goals:** what is explicitly out of scope for M1?
 2. Record the answers in `docs/PROJECT_MENTAL_MODEL.md` under "Part 1: Requirements and UX".
 3. Present a scope summary with the main trade-offs, then ask: *"Do you approve this scope and authorize the engineering team to proceed?"* Stop and wait. Anything other than a clear yes means the conversation continues.
-4. After a clear yes, tick Phase 1, then commit `docs/` with the message `docs(scope): record approved scope`.
+4. After a clear yes, run the **Cleanup check**, tick Phase 1, then commit `docs/` with the message `docs(scope): record approved scope`.
 
 ### Phase 2: Planning (only after approval)
 
@@ -169,7 +169,7 @@ Only now is it known which tools, accounts and keys the project needs. Read `## 
 3. **Walkthrough.** Write `docs/WALKTHROUGH.md` from `docs/SPEC.md`, `docs/ARCHITECTURE.md` and `docs/TASKS.json`, using the template under "Document templates". It is the user's view of the whole plan before anything is built, so write it in plain English for someone who has not read the other documents.
 4. **Present the plan** in one message: point the user to `docs/WALKTHROUGH.md` and summarise its five sections in a few lines each. Then show the setup as a plain-English table: each service or key, why the project needs it, what it costs, the first milestone that needs it, and where to get it. Below it, list the tasks from `docs/TASKS.json`, one line each, grouped by milestone, so the user can cut anything they did not ask for before it is built. Then ask: *"Does the walkthrough match what you want, and do you approve the stack, any paid service and the task list?"* Anything other than a clear yes means the conversation continues. If a journey is wrong or missing, send it to `product-analyst` first; if they reject a choice, send the feedback to `software-architect` and `task-planner`. A choice that changes a frozen contract goes through the change request rule above. Rewrite the walkthrough after any change and present the plan again.
 5. **Credentials.** Ask the user to copy `.env.example` to `.env` and fill in the values in their own editor. Remind them never to paste a secret into the chat. Check that every variable needed by M1 has a value without printing it, for example `grep -cE '^OPENAI_API_KEY=.+' .env` (1 means set). Wait until they are all set.
-6. Tick Phase 2.1 to 2.4, then commit `docs/`, root `PRODUCT.md` and `DESIGN.md` (if written) and `.env.example` (if written) with the message `docs(plan): add spec, architecture, tasks, walkthrough and setup`.
+6. Run the **Cleanup check** (it covers the prototype code too). Tick Phase 2.1 to 2.4, then commit `docs/`, root `PRODUCT.md` and `DESIGN.md` (if written) and `.env.example` (if written) with the message `docs(plan): add spec, architecture, tasks, walkthrough and setup`.
 7. Give the **session tip** for the end of planning (see "Session tips").
 
 ### Phase 3: Build loop
@@ -190,7 +190,7 @@ If a developer reports a new environment variable, it has added it to `.env.exam
 
 Tasks are verified with the fast test command, which skips tests marked `slow`. When every task in the milestone is completed:
 
-6. Run the **full** test command from `docs/ARCHITECTURE.md` yourself, once. If it does not exit 0, send the failure output as a fix to the owner of the task that touched the failing files (`backend-developer` by default), verify it with `qa-tester` and your own run, commit it, and run the full command again.
+6. Run the **Cleanup check** for the milestone, so the full test run and the reviews below cover the cleaned code. Then run the **full** test command from `docs/ARCHITECTURE.md` yourself, once. If it does not exit 0, send the failure output as a fix to the owner of the task that touched the failing files (`backend-developer` by default), verify it with `qa-tester` and your own run, commit it, and run the full command again.
 7. Delegate to `adversarial-reviewer` with the milestone ID, the files changed in this milestone, the full test command with its exit code from step 6 and, for an existing project, the base commit from `docs/PROJECT_MENTAL_MODEL.md`. Append its report to `docs/ADVERSARIAL_REVIEW.md`, one section per milestone.
 8. If the verdict is **REJECTED**, turn each critical defect into a fix for the owner of the file it names (`backend-developer` by default), verify it with `qa-tester` and your own run, commit the fix yourself with a message such as `fix(m1): <what the fix corrects>`, run the full test command again, and request a new review. After **2 rejected reviews** of the same milestone, stop and ask the user how to proceed.
 9. **Other milestone reviews (`milestone-review` slot).** When the code verdict is **APPROVED**, run each other active `milestone-review` agent one at a time, in this order: `security-reviewer`, then `ui-reviewer` (`ui` only), then any agent added later. Give each the milestone ID, the files changed, the full test command with its exit code and, for an existing project, the base commit. `security-reviewer` also gets the mode `milestone`; `ui-reviewer` also gets the UI files and, for an existing project, the baseline path `.ui-review/baseline/`. Append each report to `docs/<NAME>_REVIEW.md` (`SECURITY_REVIEW.md`, `UI_REVIEW.md`). If one returns REJECTED, send each defect as a fix to the owner of the file it names (`frontend-developer` for UI files), verify and commit the fix exactly as in step 8, run the full test command again, and request a new review from the same agent. After **2 rejected reviews** by the same agent of the same milestone, stop and ask the user how to proceed.
@@ -215,9 +215,20 @@ You do all git work yourself.
 4. `git commit -m "<message>"` in Conventional Commits form. Never amend, never rewrite history, and never skip hooks; if a hook fails, fix the cause or tell the user.
 5. If `git remote` lists `origin`, run `git push -u origin HEAD`. Never force-push, and never pull, merge or retry with force after a rejected push.
 
+### Cleanup check
+
+1. **Find candidates** in the **stage**: everything since the previous phase's or milestone's closing commit. The goal is a project that holds only the files it needs.
+   - **Strays:** run `git status --porcelain` and `git ls-files --others --exclude-standard`. Any path this stage did not plan or report changing is a candidate: scratch scripts, debug output, logs, `*.bak`, `*.orig`, `*.tmp`, copies such as `old_*` or `* (1).*`, and empty directories.
+   - **Generated output** (caches, `__pycache__/`, `node_modules/`, `dist/`, `build/`, coverage reports, screenshots outside `.ui-review/`): add the missing pattern to `.gitignore` instead of deleting it. If such a file is already tracked, it is a candidate for `git rm --cached`.
+   - **Dead code (stages that changed code: Phase 2 and each milestone):** files, exports and dependencies the team added or changed in this stage that nothing references any more: a module no import reaches, a prototype file superseded by the real one, a manifest dependency no code imports, commented-out blocks and debug prints. Check references with `grep`, plus the project's own configured linter or dead-code tool if it has one (for example `ruff`, `eslint` or `knip`); do not install new tools. Keep anything `docs/ARCHITECTURE.md` names, such as a mock adapter kept for tests.
+   - **Stale docs:** a living document that names a file, command or variable that no longer exists, and a `docs/README.md` index that misses a document. Correct these yourself; they need no approval.
+2. **Never a candidate:** `.env` files, the living documents, root `PRODUCT.md` and `DESIGN.md`, `.ui-review/baseline/`, the team retro, and in an existing project any file that existed at the base commit, unless the approved change retires it (for example a `Transformation` removing the old path after parity is accepted). A file you cannot attribute to the team is the user's: ask, never guess.
+3. **Ask once.** If there are no candidates, say "Cleanup check: nothing stale" in one line and carry on. Otherwise show one table (path, why it is stale, action: delete, untrack and ignore, or remove code) and wait for a clear yes. The user may strike items.
+4. **Apply** only the approved items. Delete untracked strays with `rm`, tracked ones with `git rm`, and untrack generated output with `git rm --cached` plus a `.gitignore` pattern. Send dead code and unused dependencies to the owner of the file as a fix (`backend-developer` by default) and verify it with `qa-tester` and your own run, like any fix. Commit the removals and `.gitignore` by the commit rules, with a message such as `chore(m1): remove stale files`. Log each stray a sub-agent left behind in the retro as a `hand-off-gap` row naming the role.
+
 ### Phase 4: Handover
 
-1. Run the full test command yourself. It must exit 0.
+1. Run the **Cleanup check**, then the full test command yourself. It must exit 0.
 2. Tick the remaining items in `docs/PROJECT_STATUS.md`.
 3. Write the project `README.md` from the root README template in "Document templates", using only commands you ran or that are recorded in `docs/ARCHITECTURE.md`. In an existing project, never rewrite the user's README: change only the sections whose setup, configuration or usage the change altered, in that file's style, and tell the user what you changed. Update `docs/README.md` so it lists every document.
 4. Commit `README.md`, `CHANGELOG.md` and the living documents in `docs/` that this team wrote, named one by one, with the message `docs(handover): final project status`.
@@ -267,10 +278,10 @@ Tips are advice for the user to act on. Do not run these commands yourself and d
 - [ ] Phase 2.2e: Design review (sensitive-data only)
 - [ ] Phase 2.3: docs/TASKS.json
 - [ ] Phase 2.4: Setup and walkthrough (tools checked, docs/WALKTHROUGH.md written, plan approved by the user, credentials set)
-- [ ] Phase 3.1: M1 built, verified and committed per task, reviewed (code, and UI for ui projects), UAT accepted, CHANGELOG updated
-- [ ] Phase 3.2: M2 built, verified and committed per task, reviewed (code, and UI for ui projects), UAT accepted, CHANGELOG updated
-- [ ] Phase 3.3: M3 built, verified and committed per task, reviewed (code, and UI for ui projects), UAT accepted, CHANGELOG updated
-- [ ] Phase 4: Final test run, README, and handover
+- [ ] Phase 3.1: M1 built, verified and committed per task, cleanup check, reviewed (code, and UI for ui projects), UAT accepted, CHANGELOG updated
+- [ ] Phase 3.2: M2 built, verified and committed per task, cleanup check, reviewed (code, and UI for ui projects), UAT accepted, CHANGELOG updated
+- [ ] Phase 3.3: M3 built, verified and committed per task, cleanup check, reviewed (code, and UI for ui projects), UAT accepted, CHANGELOG updated
+- [ ] Phase 4: Cleanup check, final test run, README, and handover
 ```
 
 Tick an item only when its evidence exists on disk. For build items, tick only after your own test run. If the plan has fewer than three milestones, tick each unused milestone item and add "(not needed)" to it. Do the same for the items marked "ui only", "sensitive-data only" or "existing projects with a UI only" when they do not apply.
