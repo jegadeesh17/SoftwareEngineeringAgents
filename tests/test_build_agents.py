@@ -328,8 +328,12 @@ def test_team_ships_the_standard_documentation_set():
 
     assert "ADR-0001" in roles["software-architect"].body
     assert "Superseded by" in roles["software-architect"].body
-    for text in ("CHANGELOG.md", "docs/README.md", "## Document templates"):
+    for text in ("CHANGELOG.md", "docs/README.md", "## Document templates", "doc-templates.md"):
         assert text in roles["orchestrator"].body, text
+    # The templates load on demand, so they stay out of the orchestrator's always-loaded prompt
+    templates = (build_agents.REPO_ROOT / "templates" / "doc-templates.md").read_text(encoding="utf-8")
+    for text in ("`docs/README.md` (docs index)", "`docs/WALKTHROUGH.md`", "Root `README.md`", "`CHANGELOG.md` header"):
+        assert text in templates, text
 
 
 @pytest.mark.parametrize(
@@ -547,9 +551,9 @@ def test_orchestrator_keeps_a_team_retro_outside_the_project():
     body = _real_roles()["orchestrator"].body
 
     for text in ("## Team retro", "~/.se-agents/retros/", "retro-template.md", "source.json",
-                 ".se-agents/RETRO.md", "scripts/contribute_retro.py", "went-well", "user-correction",
+                 ".se-agents/RETRO.md", "went-well", "user-correction",
                  "hand-off-gap", "milestones_accepted", "milestones_planned",
-                 "scripts/contribute_retro.py <retro path>"):
+                 "~/.se-agents/usage.py", "## Usage", "/judge-retros"):
         assert text in body, text
     assert "never reconstructed later" not in body
 
@@ -559,3 +563,37 @@ def test_orchestrator_starts_a_retro_for_projects_begun_before_retros():
 
     assert "if none is recorded" in body
     assert "`.se-agents/RETRO.md`, which is gitignored" in body
+
+
+def test_every_sub_agent_carries_token_discipline():
+    # Whole-document reads re-sent on every turn were most of the team's token use
+    for name, role in _real_roles().items():
+        if not role.main_agent:
+            assert "## Token discipline" in role.body, name
+            assert "never override verification" in role.body, name
+
+
+def test_orchestrator_scales_effort_by_change_size():
+    body = _real_roles()["orchestrator"].body
+
+    for text in ("**Small:**", "**Medium:**", "**Large:**", "### Small-change path", "## Keep your context small",
+                 "## Now", "every 5 tasks committed"):
+        assert text in body, text
+
+
+def test_quality_gates_survive_the_lean_workflow():
+    # Efficiency changes must never remove a verification gate
+    roles = _real_roles()
+    body = roles["orchestrator"].body
+
+    for text in ("Run the recorded `command` yourself", "**3 failed attempts**", "**2 rejected reviews**", "UAT",
+                 "Do you approve this scope", "Cleanup check", "security-reviewer", "adversarial-reviewer",
+                 "run the **full** test command", "tell the user and switch to Medium",
+                 "never how carefully"):
+        assert text in body, text
+    assert "real adapters" in roles["qa-tester"].body
+    assert "full test command" in roles["qa-tester"].body
+    for name in ("backend-developer", "frontend-developer", "platform-engineer"):
+        assert "## Tests" in roles[name].body, name
+        assert "Never weaken or delete tests" in roles[name].body, name
+        assert "### Record the run" in roles[name].body, name

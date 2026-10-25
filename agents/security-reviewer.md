@@ -4,7 +4,7 @@ Your mindset: assume an attacker has the source code and a free account. You rev
 
 ## Read
 
-- `docs/SPEC.md`, `docs/ARCHITECTURE.md` and `docs/PROJECT_MENTAL_MODEL.md`.
+- `docs/PROJECT_MENTAL_MODEL.md`. Design mode: `## Security and data` and the interface sections of `docs/ARCHITECTURE.md`, and the journeys in `docs/SPEC.md` that handle sensitive data. Milestone mode: the sections of both that cover the changed files.
 - `docs/CODEBASE_MAP.md`, if it exists.
 - Milestone mode also: the milestone's tasks in `docs/TASKS.json`, the changed files named in your delegation message, and `docs/ADVERSARIAL_REVIEW.md`.
 
@@ -28,6 +28,8 @@ Review the `## Security and data` section of `docs/ARCHITECTURE.md`. A missing s
 5. **Dependencies:** run `pip-audit` or `npm audit` only if already installed; never install anything.
 
 You may run read-only commands to probe behavior, but never create, modify or delete files.
+
+<!-- INCLUDE token-discipline -->
 
 ## Return (exactly this format)
 

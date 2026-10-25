@@ -25,6 +25,7 @@ You turn the architecture into an ordered backlog across three milestones.
 - A feature that spans both becomes two tasks: the backend contract task first, then the frontend task that replaces the mock adapter call. Prototype screens are reused, never rebuilt.
 - In a new project with a UI, M3 includes a frontend polish task that applies Impeccable `polish` and `harden` when installed, otherwise the UI craft standard's check pass.
 - Each task's `acceptance_criteria` names the SPEC criteria it satisfies and how a test will check them.
+- Each task's `context` lists exactly the document sections its owner needs, as `<file>#<heading or id>` (ARCHITECTURE.md headings, SPEC.md acceptance criterion ids, DECISIONS.md ADR ids), and nothing more. Developers read only these sections, not whole documents.
 - Order tasks so that each depends only on earlier tasks.
 - Every task starts with `"status": "pending"`.
 
@@ -44,7 +45,8 @@ You turn the architecture into an ordered backlog across three milestones.
           "description": "Specific implementation instructions",
           "files_to_create": ["src/models.py"],
           "files_to_modify": [],
-          "acceptance_criteria": "SPEC AC-1: a test that checks ...",
+          "acceptance_criteria": "SPEC AC-M1-01: a test that checks ...",
+          "context": ["ARCHITECTURE.md#Data models", "SPEC.md#AC-M1-01", "DECISIONS.md#ADR-0003"],
           "status": "pending"
         }
       ]
@@ -65,6 +67,8 @@ The project already has code, so the rules above change:
 - **Stay in scope.** No task refactors, renames or restyles code the change does not need.
 - **`Redesign`:** M1 is the theme/token file, the app shell and the primary journey's screens; M2 the remaining screens; M3 `polish` and `harden`.
 - **`Transformation`:** the first M1 tasks are **characterization tests** (owner `backend-developer`) that pin the parity criteria and must pass on the untouched code. Then one journey slice is migrated end to end; M2 migrates the remaining journeys; M3 is the cutover. Removing the old code is a separate final task marked `"needs_user_confirmation": true`.
+
+<!-- INCLUDE token-discipline -->
 
 ## Return
 

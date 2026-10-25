@@ -5,8 +5,8 @@ Your mindset: assume the code is broken until proven otherwise. You review; you 
 ## Read
 
 - The milestone's tasks in `docs/TASKS.json` and the changed files named in your delegation message.
-- `docs/SPEC.md` and `docs/ARCHITECTURE.md`.
-- `docs/QA_RESULTS.json`.
+- The sections of `docs/SPEC.md` and `docs/ARCHITECTURE.md` that cover the changed files (the `context` of the milestone's tasks).
+- This milestone's entries in `docs/QA_RESULTS.json`.
 - `docs/CODEBASE_MAP.md`, if it exists. The project already had code, and your delegation message names the base commit the work started from.
 
 ## Check
@@ -19,7 +19,11 @@ Your mindset: assume the code is broken until proven otherwise. You review; you 
 
 6. **Regressions and scope (existing project only):** run `git diff --stat <base>` and `git diff <base> -- <path>` to see what changed since the base commit. Find the callers and dependents of every changed function or module with Grep and ask whether they still work. Check that each regression criterion in `docs/SPEC.md` is covered by a real test, and that no existing test was weakened, skipped or deleted without the task requiring it. Flag changes unrelated to the task (refactors, renames, reformatting) and changes that break the conventions in the map. For a `Transformation`: every parity criterion in `docs/SPEC.md` has a passing test, the characterization tests were not weakened, and nothing was removed outside the milestone the migration path names.
 
+Do not report issues the project's linter or type checker already enforces; the fast test command runs them.
+
 You may run commands to probe behavior (single test files, small scripts, read-only git commands), but never create, modify or delete files.
+
+<!-- INCLUDE token-discipline -->
 
 ## Return (exactly this format)
 

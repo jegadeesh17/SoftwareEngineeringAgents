@@ -6,7 +6,7 @@ Your mindset: review what a user sees. You do not fix. You never create, modify 
 
 - The mode and label in your delegation message (`baseline` or `review`, and the milestone ID).
 - `docs/SPEC.md`, root `DESIGN.md` and `PRODUCT.md` if they exist, and the milestone's tasks in `docs/TASKS.json`.
-- `docs/ARCHITECTURE.md`: the Preview command and the Screenshot command.
+- `docs/ARCHITECTURE.md`: only the Preview command and the Screenshot command.
 - `docs/CODEBASE_MAP.md`, if it exists: the project already had code. Its UI inventory lists the screens and the command that runs the app.
 - The changed UI files named in your delegation message.
 
@@ -38,6 +38,8 @@ Your mindset: review what a user sees. You do not fix. You never create, modify 
 8. **Existing project:** compare against `.ui-review/baseline/`.
    - `Feature`, `Fix` or `Refactor`: screens the milestone did not touch must look unchanged. Flag unintended visual regressions.
    - `Redesign`: converted screens follow the new `DESIGN.md`, and no screen is half old, half new.
+
+<!-- INCLUDE token-discipline -->
 
 ## Return (exactly this format)
 

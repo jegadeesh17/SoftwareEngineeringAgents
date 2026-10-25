@@ -4,7 +4,8 @@ Installs the generated agent team so it works in any project folder:
 1. Claude Code sub-agents   -> ~/.claude/agents/<role>.md
 2. Claude Code /orchestrate -> ~/.claude/commands/orchestrate.md
 3. Antigravity agents       -> ~/.gemini/config/agents/<role>/agent.md
-4. Team retro template      -> ~/.se-agents/retro-template.md, plus ~/.se-agents/source.json (this clone and commit)
+4. Team files              -> ~/.se-agents/: retro-template.md, doc-templates.md, usage.py,
+                               plus source.json (this clone and commit)
 5. Antigravity global rule 'nomenclature-standards.md' (opt-in via --global-rules)
 
 Files this installer wrote before are updated. Files with your own changes are kept
@@ -38,6 +39,12 @@ LEGACY_HASHES = {
 RULE_SOURCE = Path(".agents") / "rules" / "nomenclature-standards.md"
 RETRO_TEMPLATE_SOURCE = Path("templates") / "retro.md"
 RETRO_TEMPLATE_HOME = Path(".se-agents") / "retro-template.md"
+# Files the orchestrator reads or runs from ~/.se-agents/ while it works in a user's project
+TEAM_FILES = [
+    (RETRO_TEMPLATE_SOURCE, RETRO_TEMPLATE_HOME),
+    (Path("templates") / "doc-templates.md", Path(".se-agents") / "doc-templates.md"),
+    (Path("engine") / "usage.py", Path(".se-agents") / "usage.py"),
+]
 SOURCE_INFO_PATH = Path(".se-agents") / "source.json"
 
 
@@ -172,7 +179,8 @@ def main(argv: Optional[List[str]] = None, home: Optional[Path] = None, root: Op
             results.append(install_text(installs[rel], user_home, rel, args.force, manifest))
 
     # Files we installed earlier for roles that no longer exist: report them, never delete
-    not_agents = {(Path(".gemini") / "config" / "rules" / RULE_SOURCE.name).as_posix(), RETRO_TEMPLATE_HOME.as_posix()}
+    not_agents = {(Path(".gemini") / "config" / "rules" / RULE_SOURCE.name).as_posix()}
+    not_agents |= {home_rel.as_posix() for _, home_rel in TEAM_FILES}
     removed = sorted(
         key for key in manifest
         if key not in not_agents and Path(key) not in installs and (user_home / key).exists()
@@ -187,9 +195,10 @@ def main(argv: Optional[List[str]] = None, home: Optional[Path] = None, root: Op
         print(f"      [!] Found the old 'orchestrator' skill at {old_skill}.")
         print("          The orchestrator agent replaces it; delete that folder to avoid two orchestrators.")
 
-    print("\n[4/5] Team retro template...")
-    template = build_agents.normalize_newlines((root / RETRO_TEMPLATE_SOURCE).read_text(encoding="utf-8"))
-    results.append(install_text(template, user_home, RETRO_TEMPLATE_HOME, args.force, manifest))
+    print("\n[4/5] Team files (retro template, document templates, usage script)...")
+    for source, home_rel in TEAM_FILES:
+        text = build_agents.normalize_newlines((root / source).read_text(encoding="utf-8"))
+        results.append(install_text(text, user_home, home_rel, args.force, manifest))
     _write_source_info(user_home, root)
 
     print("\n[5/5] Antigravity global naming rule...")

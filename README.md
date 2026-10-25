@@ -24,7 +24,8 @@ AI coding agents tend to fail in predictable ways. Each one has a specific guard
 | Agents approve what you would reject | **You accept, not the agents.** For a UI, you click through a prototype before the architecture is frozen, and you test every milestone yourself before it counts as done. Feedback is sorted into UI, Behavior or Contract, and only Contract changes touch the architecture. |
 | Generic, "AI-looking" UI | **Built-in design standard.** The frontend developer and UI reviewer carry their own UI craft rules and a refuse list of AI-looking patterns, and preload the [Impeccable](https://impeccable.style) skill on top when it is installed. Screenshots are reviewed at desktop and mobile widths. |
 | Breaks code it didn't write | **Existing-project mode.** A codebase analyst maps the stack, conventions and a baseline test run first. Work happens on its own branch, and the reviewer checks for regressions against the starting commit. |
-| The team never learns from its mistakes | **Self-retro.** Each build leaves a retro in `~/.se-agents/retros/`, outside the project's git: what went well, every mistake, bug and failure, and a score for each agent backed by evidence. You can contribute it by pull request, and the maintainers judge all retros to fix the team. |
+| Multi-agent runs burn through tokens | **Lean by design.** Agents read only the doc sections their task names, keep command output short, and the per-task loop uses one agent instead of two. Small changes skip the planning pipeline (never the tests, reviews or your sign-off), and the orchestrator suggests a fresh session every few tasks. |
+| The team never learns from its mistakes | **Self-retro.** Each build leaves a retro in `~/.se-agents/retros/`, outside the project's git: what went well, every mistake, bug and failure, a score for each agent backed by evidence, and measured token use per agent. `/judge-retros` turns your retros into ranked fixes to the team, and flags any drop in quality. |
 
 ## How it works
 
@@ -55,13 +56,14 @@ You <──> ORCHESTRATOR (the only agent that talks to you)
              then you fill in .env yourself
           │
           │   for each task:
-          ├─> backend-developer / frontend-developer / platform-engineer ──> write the code (by task owner)
-          ├─> qa-tester ──────────────> writes and runs tests -> docs/QA_RESULTS.json
+          ├─> backend-developer / frontend-developer / platform-engineer ──> tests first, then the code,
+          │     runs the fast tests (with lint and type checks) -> docs/QA_RESULTS.json
           │     fail -> back to the developer (up to 3 tries, then it asks you)
-          │     pass -> the orchestrator re-runs the fast tests itself, then commits and
-          │             pushes that task (full suite once per milestone)
+          │     pass -> the orchestrator re-runs the recorded command itself, then commits and
+          │             pushes that task
           │
           │   for each milestone:
+          ├─> qa-tester ──────────────> tests for uncovered criteria and cross-task wiring, full suite
           ├─> adversarial-reviewer ───> read-only audit -> APPROVED or REJECTED
           ├─> security-reviewer ──────> read-only security audit (sensitive-data only)
           ├─> ui-reviewer (UI only) ──> screenshots + UI craft audit -> APPROVED or REJECTED
@@ -77,9 +79,9 @@ You <──> ORCHESTRATOR (the only agent that talks to you)
 | ProductAnalyst | `docs/SPEC.md` | docs only |
 | SoftwareArchitect | `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` | docs only |
 | TaskPlanner | `docs/TASKS.json` | docs only |
-| BackendDeveloper | the non-UI code | yes, and can run commands |
-| FrontendDeveloper | the prototype and UI code (UI projects only) | yes, can run commands and use the built-in UI craft standard (and Impeccable, if installed) |
-| QaTester | tests and `docs/QA_RESULTS.json` | tests and docs, and can run commands |
+| BackendDeveloper | the non-UI code and its tests | yes, and can run commands |
+| FrontendDeveloper | the prototype, UI code and its tests (UI projects only) | yes, can run commands and use the built-in UI craft standard (and Impeccable, if installed) |
+| QaTester | once per milestone: tests for uncovered criteria and cross-task wiring, a full test run in `docs/QA_RESULTS.json` | tests and docs, and can run commands |
 | AdversarialReviewer | APPROVED/REJECTED verdict | **no**: read-only, can run tests |
 | UiReviewer | screenshots and an APPROVED/REJECTED verdict (UI projects only) | **no**: read-only, writes only screenshots under `.ui-review/` |
 | PlatformEngineer | CI, container and deploy config, `docs/DEPLOYMENT.md` (deploy projects only) | yes, can run commands; never deploys |
@@ -99,7 +101,7 @@ This installs:
 - `~/.claude/agents/*.md`: the 11 Claude Code sub-agents.
 - `~/.claude/commands/orchestrate.md`: the `/orchestrate` command.
 - `~/.gemini/config/agents/*/agent.md`: the orchestrator and 11 sub-agents for Antigravity.
-- `~/.se-agents/retro-template.md` and `~/.se-agents/source.json`: the retro format and which version of the team you installed.
+- `~/.se-agents/retro-template.md`, `doc-templates.md`, `usage.py` and `source.json`: the retro format, the document templates the orchestrator reads on demand, the token usage report, and which version of the team you installed.
 
 The installer records what it wrote in `~/.se-agents/installed.json`. Re-running it after `git pull` updates files it installed before and keeps any you've edited. It exits with an error if it had to skip a file.
 
@@ -136,11 +138,9 @@ Every build leaves a short retro on your machine, in `~/.se-agents/retros/<proje
 
 In Claude Code the first write outside the project asks for permission. Approve it, or add `"Edit(~/.se-agents/**)"` to `permissions.allow` in `~/.claude/settings.json`.
 
-To share a retro, run this from your clone:
+At each milestone the orchestrator also fills the retro's `## Usage` table with measured token use per agent (runs, turns, average and peak context), read from Claude Code's own session transcripts by `~/.se-agents/usage.py`. You can run it yourself on any project: `python ~/.se-agents/usage.py <project folder>`.
 
-    python scripts/contribute_retro.py
-
-It checks the file's format and scans it for paths, emails, URLs, hostnames, IP addresses and keys. It then copies the retro into `retros/community/` under an anonymous name, on a new branch cut from this repository's `main` (your own commits stay out of it), and asks before opening a pull request. The maintainers run `/judge-retros` over all contributed retros to find recurring problems and change the agents.
+To learn from your retros, open Claude Code in your clone and run `/judge-retros`. It validates every retro in `~/.se-agents/retros/`, clusters recurring problems and cost hot spots, ranks any drop in quality after a change to the agents first, checks whether a later commit already fixed each problem, and writes `retros/REPORT.md` with concrete edits to the agents. You decide what to change.
 
 ## Engineering decisions
 
@@ -149,7 +149,8 @@ It checks the file's format and scans it for paths, emails, URLs, hostnames, IP 
 - **Model tiering.** Each role runs on the model Anthropic positions for its kind of work. Opus handles judgment: the orchestrator (at high effort), product analyst, architect, task planner, adversarial reviewer and security reviewer. Sonnet handles coding and visual review: the backend and frontend developers and the UI reviewer. Haiku handles read-heavy or downstream-verified work: the codebase analyst, QA tester and platform engineer. Each role's reasoning effort is pinned too. The orchestrator does the git work itself, since a sub-agent for a few git commands only adds waiting. A role's model and effort are one line each in [`agents/roles.toml`](agents/roles.toml). Antigravity agents use your session's model.
 - **Checked live, not assumed.** Antigravity enforces each agent's `tools` list. This was confirmed with CLI 1.2.12 by trying to call tools outside the list.
 - **A non-destructive installer.** It keeps a manifest of what it wrote, updates only its own files on reinstall, and never overwrites your edits without `--force`.
-- **The team judges itself.** Each retro scores every agent against a rubric anchored to counts (retries, rejected reviews, UAT defects), so an LLM judge scores evidence, not impressions. A repo-side judge clusters problems across retros, checks whether a later commit already fixed them, and proposes edits that a person applies.
+- **The team judges itself.** Each retro scores every agent against a rubric anchored to counts (retries, rejected reviews, UAT defects), so an LLM judge scores evidence, not impressions, and records measured token use per agent. A repo-side judge clusters problems and cost across retros, checks whether a later commit already fixed them, and proposes edits that a person applies.
+- **Lean context, same gates.** A real build of an 87k-line app spent most of its tokens re-sending context, not writing code: whole design docs re-read by each agent, a long-running orchestrator session, and two agents per task. The team now follows practices published by Anthropic, OpenAI and Cognition: just-in-time section reads, short tool output, state kept in files instead of a growing context, single-writer tasks with context-free reviewers, lint in the fast test loop, and effort scaled to the change's size. Every verification gate is kept, and a test fails if one is removed.
 - **Tested.** pytest covers the generator, the installer and the rule format, including a drift check against the committed files. CI runs on Linux and Windows with Python 3.11 and 3.13.
 
 ## Fork it and make it yours

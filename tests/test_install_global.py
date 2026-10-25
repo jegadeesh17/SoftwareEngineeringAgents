@@ -17,7 +17,7 @@ def _text(path):
 
 
 def _copy_repo(repo):
-    for name in ("agents", ".claude", ".agents", "templates"):
+    for name in ("agents", ".claude", ".agents", "templates", "engine"):
         shutil.copytree(ROOT / name, repo / name)
     return repo
 
@@ -197,15 +197,18 @@ def test_installer_notes_installed_roles_that_were_removed_from_the_team(tmp_pat
     assert (home / ".claude" / "agents" / "codebase-analyst.md").exists()
 
 
-def test_installer_installs_retro_template_and_source_info(tmp_path, installer):
+def test_installer_installs_team_files_and_source_info(tmp_path, installer):
     assert installer.main([], home=tmp_path) == 0
 
     assert _text(tmp_path / ".se-agents" / "retro-template.md") == _text(ROOT / "templates" / "retro.md")
+    assert _text(tmp_path / ".se-agents" / "doc-templates.md") == _text(ROOT / "templates" / "doc-templates.md")
+    assert _text(tmp_path / ".se-agents" / "usage.py") == _text(ROOT / "engine" / "usage.py")
     info = json.loads(_text(tmp_path / ".se-agents" / "source.json"))
     assert Path(info["repo"]) == ROOT.resolve()
     assert re.fullmatch(r"[0-9a-f]{7}|unknown", info["commit"])
     manifest = json.loads(_text(tmp_path / ".se-agents" / "installed.json"))
-    assert ".se-agents/retro-template.md" in manifest
+    for key in (".se-agents/retro-template.md", ".se-agents/doc-templates.md", ".se-agents/usage.py"):
+        assert key in manifest, key
     assert all(isinstance(value, str) for value in manifest.values())
 
 

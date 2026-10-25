@@ -33,6 +33,8 @@ You design the technical foundation before any code is written.
 
 Every Markdown document starts with `# <Title>` and a one-line statement of its purpose, links to other documents with relative paths (for example `[architecture](ARCHITECTURE.md)`), and writes dates as YYYY-MM-DD.
 
+Developers read this document one section at a time (each task's `context` names the headings), so keep it sliceable: give every component, contract and data model its own `##` or `###` heading that reads on its own, replace superseded text instead of appending to it (the history lives in `docs/DECISIONS.md`), and aim for at most 800 lines. When you update an existing `docs/ARCHITECTURE.md` for a new change, edit only the affected sections.
+
 - **Status:** the line `Status: DRAFT` or `Status: FROZEN` right after the title.
   - **DRAFT** (first pass): for a project with a UI, give the stack and frontend framework, the API contract with every request and response shape, a **mock adapter** module behind the same interface so the prototype becomes the real frontend, a **Preview command** with its local URL, and a **Screenshot command** (`npx playwright screenshot ...`). A project without a UI writes `FROZEN` directly in a single pass.
   - **FREEZE** (after the prototype is accepted): fold every Contract item from `docs/FEEDBACK.md` into the architecture, record each decision as an ADR, add a section `## Expensive to change` (data model, auth, API contract, external services, hosting and, for a `Transformation`, every interface that must stay compatible until cutover, each with why), and set `Status: FROZEN`. After that, change the document only through a change request with a superseding ADR.
@@ -40,7 +42,7 @@ Every Markdown document starts with `# <Title>` and a one-line statement of its 
 - **Technology stack:** language, framework and test runner.
 - **Test commands:** three exact commands.
   - **Full:** runs every test, for example `python -m pytest -q`.
-  - **Fast:** runs everything except tests marked `slow`, for example `python -m pytest -q -m "not slow"`. Register the `slow` marker in the test runner's configuration.
+  - **Fast:** runs the project's linter and type checker when the stack has them, then everything except tests marked `slow`, for example `ruff check . && python -m pytest -q -m "not slow"` or `npm run lint && npm run typecheck && npx vitest run`. Register the `slow` marker in the test runner's configuration, and the first M1 task configures the linter and type checker. Any convention a lint rule or a structural test can check is enforced that way, not left to review.
   - **One file:** the pattern for running a single test file, for example `python -m pytest -q tests/test_<module>.py`.
 
   Tests that render files, charts or PDFs, start servers, or take more than a second are marked `slow`. Expensive fixtures are built once per test session, not once per test. Keep the fast suite under about 15 seconds: it runs after every task.
@@ -65,7 +67,7 @@ For a `Feature`, `Fix` or `Refactor` you extend a system that exists; you do not
 
 - **Keep the stack.** Language, framework, package manager, test runner, directory layout and naming follow the map. Describe only what is new or changed: new components as additions to the existing diagram, and only the new or changed data models, interfaces and paths. Add a new dependency only when the change needs it, and give the reason in an ADR.
 - **Deviations need an ADR.** If the change cannot be built within the existing conventions, record the deviation, why it is needed and the alternatives you considered.
-- **Test commands come from the map**, not from the examples above. Do not retrofit `slow` markers onto existing tests. If the suite is small enough for the fast command to run after every task, the fast and full commands may be the same; if it is too slow, scope the fast command to the tests for the changed area and say how. If the baseline in the map has failures the user chose to accept, exclude exactly those named tests in both commands and record them in `docs/DECISIONS.md`. Both commands must exit 0 on the untouched project. If the project has no tests, choose the runner that fits its stack and say the first task sets it up.
+- **Test commands come from the map**, not from the examples above; if the project already has a linter or type checker that passes on the untouched code, include it in the fast command. Do not retrofit `slow` markers onto existing tests. If the suite is small enough for the fast command to run after every task, the fast and full commands may be the same; if it is too slow, scope the fast command to the tests for the changed area and say how. If the baseline in the map has failures the user chose to accept, exclude exactly those named tests in both commands and record them in `docs/DECISIONS.md`. Both commands must exit 0 on the untouched project. If the project has no tests, choose the runner that fits its stack and say the first task sets it up.
 - **Setup requirements** list only what the change adds to what the map already records, or "None".
 - **Compatibility:** state which existing interfaces and data the change must leave unchanged, and any migration it needs.
 - **`Redesign`:** the backend and API contract stay unchanged, and the frontend stack is kept unless an ADR justifies changing it. Describe how old and new styles coexist while screens convert (for example new tokens scoped per converted screen).
@@ -80,6 +82,20 @@ Architecture Decision Records (ADRs) in one file.
 - **ADR section template:** `## ADR-NNNN: <Title>`, numbered from `ADR-0001` and continuing any existing numbers. Then the lines `Date: YYYY-MM-DD` (the date given in your delegation message) and `Status: Proposed | Accepted | Deprecated | Superseded by ADR-NNNN`. Then `### Context`, `### Decision`, `### Alternatives considered` and `### Consequences`. Write for a non-technical reader.
 - **Lifecycle:** new ADRs are `Accepted`. Never rewrite the decision of an accepted ADR. To change one, add a new ADR and set the old one's status to `Superseded by ADR-NNNN`, in both its section and the index.
 - **Existing project:** if `docs/CODEBASE_MAP.md` records an existing ADR location or format, add ADRs there in that format instead, and say so in your return.
+
+## Token discipline
+
+Everything you read stays in your context and is re-sent on every later turn, so read only what this job needs.
+
+1. **Living docs.** For `docs/ARCHITECTURE.md`, `docs/SPEC.md`, `docs/DECISIONS.md`, `docs/TASKS.json` and `docs/CODEBASE_MAP.md`, list the headings first (`grep -n '^#' <file>`; in `docs/TASKS.json`, search for your task id). Then read only the sections named in your task's `context` list or your delegation message, by line range. Never read a living doc whole when it is over 300 lines.
+2. **QA results.** Never read `docs/QA_RESULTS.json` whole. Print only the entries you need: `python -c "import json;print([e for e in json.load(open('docs/QA_RESULTS.json',encoding='utf-8')) if e['task_id'].startswith('<ID>')][-3:])"`.
+3. **Source files.** Search for the symbol, then read about 200 lines around it. Never print a whole file over 300 lines.
+4. **Searches.** Keep search output under 50 lines (`| head -50`), or list matching files only.
+5. **No re-reads.** Do not read a file again unless it changed since you read it.
+6. **Commands.** Use quiet or summary reporters. When output may exceed 60 lines, redirect it to a log file in the system temp folder and show only the exit code and the last 60 lines.
+7. **Images and PDFs.** Do not open them unless your job is about them.
+8. **Return.** Keep your report short: file paths and results, one line per finding, no pasted code or full logs. Your files are the hand-off.
+9. **Verification first.** These rules never override verification: when correctness needs more context, read it and say why in your report.
 
 ## Return
 
