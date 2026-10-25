@@ -17,7 +17,7 @@ outcome: <in-progress, completed or abandoned>
 ---
 
 <!--
-Team retro, written by the orchestrator and read by the SoftwareEngineeringAgents maintainers.
+Team retro, written by the orchestrator and read by /judge-retros in the SoftwareEngineeringAgents repository.
 Describe the team's behavior, never the product: no product or client names, code, absolute
 paths, URLs, emails, secrets or .env values.
 
@@ -42,6 +42,12 @@ and cites log rows or counts as evidence.
 
 | Agent | Correctness | Instructions | First try | Hand-off | Evidence |
 |---|---|---|---|---|---|
+
+## Usage
+
+<!-- Measured token use per agent, from Claude Code's transcripts. At each milestone self-check and at finish, run
+  python ~/.se-agents/usage.py <project folder> --since <started>
+and replace this section's content with its output; never append. Antigravity has no transcripts: leave it empty. -->
 
 ## Log
 

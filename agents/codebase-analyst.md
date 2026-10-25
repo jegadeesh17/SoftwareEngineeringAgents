@@ -35,6 +35,8 @@ Every Markdown document starts with `# <Title>` and a one-line statement of its 
 
 Never read, copy or print the contents of `.env` files or any secret. Record variable names only.
 
+<!-- INCLUDE token-discipline -->
+
 ## Return
 
 A 4–6 line summary: the stack, the test command, the baseline result (passed, failed with a count, none, or could not run), and the biggest risk.

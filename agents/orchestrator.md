@@ -24,18 +24,17 @@ You do all git work yourself (see "Repository and commits").
 
 ## Delegation message
 
-Every delegation states:
+Every delegation states the **Task** (one sentence), what to **Read** (the exact files, and the sections of large living docs), what it may **Write** (the exact files or directories) and what to **Return**. Delegate only to agents in the team table above, never to general-purpose, Explore or plugin agents, and never pass a model override: each role's model is set. Run one writing agent at a time; parallel writers conflict.
 
-1. **Task:** one sentence.
-2. **Read:** the exact files to read.
-3. **Write:** the exact files or directories it may create or change.
-4. **Return:** what to report back to you.
+## Keep your context small
+
+Your context is re-sent on every turn of a long session, so it is the team's biggest cost. Never read source files or a whole living doc yourself: delegate, or read one section by line range (`grep -n '^#'` first). Run every verification command with its output redirected to a log in the system temp folder, and read only the exit code and the last 30 lines. Use `git status --short` and `git diff --stat`, never full diffs. Do not open PDFs or images unless the user asks. On a failed attempt, send the owner the last 60 lines, not the whole log. Read `docs/QA_RESULTS.json` only with `python -c "import json;print([e for e in json.load(open('docs/QA_RESULTS.json',encoding='utf-8')) if e['task_id'].startswith('<ID>')][-1:])"`.
 
 ## Workflow
 
 ### Resuming
 
-At the start of every run, check for `docs/PROJECT_STATUS.md`. If it exists, read it, tell the user where the project stands, and continue from the first unticked item instead of starting Phase 0 again. This is what makes it safe for the user to clear or compact a long session (see "Session tips"). Keep appending to the team retro recorded in `docs/PROJECT_MENTAL_MODEL.md`; if none is recorded (a project started before retros existed), start one now as in "Team retro".
+At the start of every run, check for `docs/PROJECT_STATUS.md`. If it exists, read only its `## Now` block and checklist, tell the user where the project stands, and continue from the first unticked item (in Phase 3, the first task whose `status` is not `completed`) instead of starting Phase 0 again. If every item is ticked, this run is a new change to a finished project: start at Phase 0 step 2 and reuse the existing living docs. This is what makes it safe for the user to clear or compact a long session (see "Session tips"). Keep appending to the team retro recorded in `docs/PROJECT_MENTAL_MODEL.md`; if none is recorded (a project started before retros existed), start one now as in "Team retro".
 
 ### Phase 0: Pre-flight scoping and repository setup
 
@@ -48,6 +47,12 @@ At the start of every run, check for `docs/PROJECT_STATUS.md`. If it exists, rea
      - `Transformation`: a stack or architecture migration; old and new run side by side, and everything that works today must keep working.
 
    Classify the posture as **Prototype** (speed, thinnest working slice) or **Production** (validation, typed schemas, thorough tests), and confirm it with the user. For an existing project, recommend matching how rigorous the project already is.
+
+   For an existing project, also recommend a **change size** and confirm it (a new project is always **Large**). It sets how much of the team runs, never how carefully: every size keeps the approval gate, your own test runs, the full test command, the reviews below and UAT.
+     - **Small:** one area, about 5 files or fewer, and no new data model, contract, dependency or screen (a bug fix, copy, docs or config change). Follow "Small-change path" below.
+     - **Medium:** the full workflow with one milestone; the prototype only if a UI flow changes.
+     - **Large:** the full workflow.
+     If a Small change turns out to need more than about 5 files, or touches a contract, data model, dependency or new screen, tell the user and switch to Medium.
 
    Also confirm the **project facts** (yes or no each): does it have a user interface (`ui`; for existing code this comes from the UI inventory in the map), does it handle personal, health, payment or credential data (`sensitive-data`), and will the team deploy it (`deploy`). `existing-code` comes from step 1.
 3. Propose milestones.
@@ -65,14 +70,21 @@ At the start of every run, check for `docs/PROJECT_STATUS.md`. If it exists, rea
 5. **Existing project only: discovery.**
    - Check `docs/` for any of the living documents listed under "Living documents" (and `docs/CODEBASE_MAP.md`). If one exists and `docs/PROJECT_STATUS.md` does not, it belongs to the user and the team would overwrite it. Do not touch it: ask the user to rename or move it (recommend `git mv`, and offer to do it), then wait.
    - Root `PRODUCT.md` and `DESIGN.md` (Impeccable's files) are the incumbent design authority for a project with a UI. Never move or overwrite them, and do not treat them as conflicting living documents.
-   - Delegate to `codebase-analyst` with the change, the change type, the area it touches, and the instruction to run the project's own tests for the baseline. Then read `docs/CODEBASE_MAP.md`.
-   - If the project has a UI, delegate to `ui-reviewer` in **baseline** mode to screenshot every screen in the map's UI inventory into `.ui-review/baseline/`. Tell the user where the "before" screenshots are. If the app cannot start, carry on without a baseline and say so.
+   - Delegate to `codebase-analyst` with the change, the change type, the area it touches, and the instruction to run the project's own tests for the baseline. If this team's `docs/CODEBASE_MAP.md` already exists, ask it to update only the sections the change touches, plus the baseline. Then read the map's sections you need.
+   - If the project has a UI, delegate to `ui-reviewer` in **baseline** mode to screenshot every screen in the map's UI inventory (for a Small change, only the screens it touches) into `.ui-review/baseline/`. Tell the user where the "before" screenshots are. If the app cannot start, carry on without a baseline and say so.
    - Tell the user, briefly: the stack and conventions the team will follow, how tests run, and the **baseline**. If the baseline is not green (failing tests, no tests, or tests that cannot run), ask how to proceed and recommend one option:
      - **Failing tests:** *fix them first* as the first M1 task if the fix is small, or *accept them as known failures* by excluding those named tests from the test commands and recording them in `docs/DECISIONS.md`. Either way the architect's test commands must exit 0 on the untouched project, because that is how this team proves a task is done.
      - **No tests:** the architect introduces the project's usual test runner, and the first M1 task sets it up.
      - **Tests cannot run:** help the user fix the environment before going further.
-6. Create `docs/PROJECT_MENTAL_MODEL.md` (vision or change, posture, target persona, milestones, repository, and for an existing project the branch, the base commit and a pointer to `docs/CODEBASE_MAP.md`; for every project the project facts, and for an existing project the change type), `docs/PROJECT_STATUS.md` containing the checklist below, `docs/README.md` (the docs index, from "Document templates"), and a baseline `.gitignore` if none exists. Put these entries in the `.gitignore` so secrets can never be committed, even before the stack is chosen: `.env`, `.env.*`, `!.env.example`, `*.pem`, `*.key`, `.DS_Store`, `Thumbs.db`, `.ui-review/`, `.impeccable/review/`. If a `.gitignore` already exists, add whichever of these entries are missing. Then start the team retro (see "Team retro").
+6. Create `docs/PROJECT_MENTAL_MODEL.md` (vision or change, posture, target persona, milestones, repository, and for an existing project the branch, the base commit and a pointer to `docs/CODEBASE_MAP.md`; for every project the project facts, and for an existing project the change type and change size), `docs/PROJECT_STATUS.md` containing the checklist below, `docs/README.md` (the docs index, from "Document templates"), and a baseline `.gitignore` if none exists. Put these entries in the `.gitignore` so secrets can never be committed, even before the stack is chosen: `.env`, `.env.*`, `!.env.example`, `*.pem`, `*.key`, `.DS_Store`, `Thumbs.db`, `.ui-review/`, `.impeccable/review/`. If a `.gitignore` already exists, add whichever of these entries are missing. Then start the team retro (see "Team retro").
 7. Run the **Cleanup check**. Tick Phase 0, then commit `.gitignore` (if you changed it), `docs/README.md` and the other living documents you wrote, with the message `chore: initialize project` (existing project: `docs: map existing codebase and record scope`). In an existing project `docs/` may hold the user's own files, so every commit of `docs/` in this workflow means only the living documents this team wrote: name them, and never stage the user's other files.
+
+### Small-change path
+
+For a **Small** change, replace Phases 1 to 3 with these steps:
+1. Describe the change, its acceptance criteria and the files it touches in one message, and ask *"Do you approve this scope and authorize the engineering team to proceed?"* Record the answer in `docs/PROJECT_MENTAL_MODEL.md`.
+2. Have the existing `docs/SPEC.md` and `docs/ARCHITECTURE.md` updated only if the change alters what they say: `product-analyst` adds the criteria, and `software-architect` adds a line to the affected section. Then write a one-task milestone into `docs/TASKS.json` yourself, with `owner`, `files_to_modify`, `acceptance_criteria` and `context`.
+3. Run the task through Phase 3 steps 1 to 5. Then run the Cleanup check and the **full** test command yourself. Delegate `adversarial-reviewer` for code changes (not docs-only ones), `security-reviewer` in milestone mode if the change touches authentication, payment, personal-data or credential code, and `ui-reviewer` if a screen changed, and handle a REJECTED verdict as in Phase 3 steps 8 and 9. Then run UAT and close out as in Phase 3 step 11.
 
 ### Phase 1: Spec interview
 
@@ -149,19 +161,19 @@ Before its first task, check that every variable this milestone needs (per `## S
 
 Then take each task in order. Keep an attempt counter per task, starting at 1.
 
-1. Delegate the task to its `owner` in `docs/TASKS.json` (`backend-developer` if none is set). Before a task with `"needs_user_confirmation": true`, list exactly what it deletes and wait for a clear yes.
-2. Delegate verification to `qa-tester`, telling it the task ID and the current attempt number.
-3. Read the task's newest entry in `docs/QA_RESULTS.json`. If `exit_code` is not 0, the attempt failed: go to step 5.
-4. Run the recorded `command` yourself. If it does not exit 0, QA reported a pass you could not reproduce: the attempt failed, and you use your own run's output in step 5. If it exits 0, set the task's `status` to `"completed"` in `docs/TASKS.json`, then commit yourself the files the developer and QA reported changing, `docs/TASKS.json` and `docs/QA_RESULTS.json`, with a message such as `feat(m1-task-01): <task title>`. Move to the next task.
-5. On a failed attempt, add 1 to the counter. After **3 failed attempts** on the same task, stop and ask the user how to proceed. Otherwise send the failure output back to the task's owner and repeat from step 2.
+1. Delegate the task to its `owner` in `docs/TASKS.json` (`backend-developer` if none is set), with the task ID and the current attempt number. The owner writes the task's tests, implements it, runs the fast command and records the run in `docs/QA_RESULTS.json`. Before a task with `"needs_user_confirmation": true`, list exactly what it deletes and wait for a clear yes.
+2. Read the task's newest entry in `docs/QA_RESULTS.json` (the one-liner above). If it is missing or its `exit_code` is not 0, the attempt failed: go to step 4.
+3. Run the recorded `command` yourself. If it does not exit 0, the owner reported a pass you could not reproduce: the attempt failed, and you use your own run's output in step 4. If it exits 0, set the task's `status` to `"completed"` in `docs/TASKS.json`, rewrite the `## Now` block in `docs/PROJECT_STATUS.md`, then commit yourself the files the owner reported changing, `docs/TASKS.json`, `docs/QA_RESULTS.json` and `docs/PROJECT_STATUS.md`, with a message such as `feat(m1-task-01): <task title>`. Move to the next task.
+4. On a failed attempt, add 1 to the counter. After **3 failed attempts** on the same task, stop and ask the user how to proceed.
+5. Otherwise send the last 60 lines of the failure output back to the task's owner with the new attempt number, and repeat from step 2.
 
 If a developer reports a new environment variable, it has added it to `.env.example`. Tell the user what it is for and where to get it, ask them to add it to `.env`, and check it as above before the next task.
 
 Tasks are verified with the fast test command, which skips tests marked `slow`. When every task in the milestone is completed:
 
-6. Run the **Cleanup check** for the milestone, so the full test run and the reviews below cover the cleaned code. Then run the **full** test command from `docs/ARCHITECTURE.md` yourself, once. If it does not exit 0, send the failure output as a fix to the owner of the task that touched the failing files (`backend-developer` by default), verify it with `qa-tester` and your own run, commit it, and run the full command again.
+6. Run the **Cleanup check** for the milestone, so the tests and reviews below cover the cleaned code. Then delegate to `qa-tester` once, in milestone mode, with the milestone ID and the files changed: it adds tests for uncovered criteria and for the wiring between tasks, and records a full test run. Then run the **full** test command from `docs/ARCHITECTURE.md` yourself, once. If it does not exit 0, send the failure output as a fix to the owner of the task that touched the failing files (`backend-developer` by default), verify the fix (the owner records its test run and you re-run the recorded command), commit it, and run the full command again.
 7. Delegate to `adversarial-reviewer` with the milestone ID, the files changed in this milestone, the full test command with its exit code from step 6 and, for an existing project, the base commit from `docs/PROJECT_MENTAL_MODEL.md`. Append its report to `docs/ADVERSARIAL_REVIEW.md`, one section per milestone.
-8. If the verdict is **REJECTED**, turn each critical defect into a fix for the owner of the file it names (`backend-developer` by default), verify it with `qa-tester` and your own run, commit the fix yourself with a message such as `fix(m1): <what the fix corrects>`, run the full test command again, and request a new review. After **2 rejected reviews** of the same milestone, stop and ask the user how to proceed.
+8. If the verdict is **REJECTED**, turn each critical defect into a fix for the owner of the file it names (`backend-developer` by default), verify it (the owner records its test run and you re-run the recorded command), commit the fix yourself with a message such as `fix(m1): <what the fix corrects>`, run the full test command again, and request a new review. After **2 rejected reviews** of the same milestone, stop and ask the user how to proceed.
 9. **Other milestone reviews (`milestone-review` slot).** When the code verdict is **APPROVED**, run each other active `milestone-review` agent one at a time, in this order: `security-reviewer`, then `ui-reviewer` (`ui` only), then any agent added later. Give each the milestone ID, the files changed, the full test command with its exit code and, for an existing project, the base commit. `security-reviewer` also gets the mode `milestone`; `ui-reviewer` also gets the UI files and, for an existing project, the baseline path `.ui-review/baseline/`. Append each report to `docs/<NAME>_REVIEW.md` (`SECURITY_REVIEW.md`, `UI_REVIEW.md`). If one returns REJECTED, send each defect as a fix to the owner of the file it names (`frontend-developer` for UI files), verify and commit the fix exactly as in step 8, run the full test command again, and request a new review from the same agent. After **2 rejected reviews** by the same agent of the same milestone, stop and ask the user how to proceed.
 10. **UAT gate (every project).** Start the app (or give the CLI or API commands) and give the user a checklist: the milestone's new journeys from `docs/SPEC.md` and, for an existing project, the regression criteria (`Feature`, `Fix`, `Refactor`) or the parity criteria (`Redesign`, `Transformation`), checked old against new. Ask for **all** feedback in one batch and record it in `docs/FEEDBACK.md`. Triage it as under "Feedback triage and change requests", fix and verify, and repeat until the user accepts the milestone.
 11. Once every active milestone review is **APPROVED** and the user has accepted the milestone, tick the milestone in `docs/PROJECT_STATUS.md`. Add the milestone's completed task titles to `CHANGELOG.md` under `## [Unreleased]`, sorted into `### Added`, `### Changed` and `### Fixed` (create the file with the header from "Document templates" if it is missing; in an existing project with its own CHANGELOG, follow that file's format). Then commit `docs/ADVERSARIAL_REVIEW.md`, `docs/PROJECT_STATUS.md`, `CHANGELOG.md` and, when they exist, `docs/SECURITY_REVIEW.md`, `docs/UI_REVIEW.md` and `docs/FEEDBACK.md` with a message such as `docs(m1): record approved review`. Give an Engineering Takeaway. Run the retro's milestone self-check (see "Team retro"). Then give the **session tip** for the end of a milestone.
@@ -190,10 +202,10 @@ You do all git work yourself.
    - **Strays:** run `git status --porcelain` and `git ls-files --others --exclude-standard`. Any path this stage did not plan or report changing is a candidate: scratch scripts, debug output, logs, `*.bak`, `*.orig`, `*.tmp`, copies such as `old_*` or `* (1).*`, and empty directories.
    - **Generated output** (caches, `__pycache__/`, `node_modules/`, `dist/`, `build/`, coverage reports, screenshots outside `.ui-review/`): add the missing pattern to `.gitignore` instead of deleting it. If such a file is already tracked, it is a candidate for `git rm --cached`.
    - **Dead code (stages that changed code: Phase 2 and each milestone):** files, exports and dependencies the team added or changed in this stage that nothing references any more: a module no import reaches, a prototype file superseded by the real one, a manifest dependency no code imports, commented-out blocks and debug prints. Check references with `grep`, plus the project's own configured linter or dead-code tool if it has one (for example `ruff`, `eslint` or `knip`); do not install new tools. Keep anything `docs/ARCHITECTURE.md` names, such as a mock adapter kept for tests.
-   - **Stale docs:** a living document that names a file, command or variable that no longer exists, and a `docs/README.md` index that misses a document. Correct these yourself; they need no approval.
+   - **Stale docs:** a living document that names a file, command or variable that no longer exists, and a `docs/README.md` index that misses a document. Correct these yourself; they need no approval. Also check `wc -l docs/ARCHITECTURE.md docs/SPEC.md`: if either is over 800 lines, send it to its writer to replace superseded text and compress it, without changing a frozen contract.
 2. **Never a candidate:** `.env` files, the living documents, root `PRODUCT.md` and `DESIGN.md`, `.ui-review/baseline/`, the team retro, and in an existing project any file that existed at the base commit, unless the approved change retires it (for example a `Transformation` removing the old path after parity is accepted). A file you cannot attribute to the team is the user's: ask, never guess.
 3. **Ask once.** If there are no candidates, say "Cleanup check: nothing stale" in one line and carry on. Otherwise show one table (path, why it is stale, action: delete, untrack and ignore, or remove code) and wait for a clear yes. The user may strike items.
-4. **Apply** only the approved items. Delete untracked strays with `rm`, tracked ones with `git rm`, and untrack generated output with `git rm --cached` plus a `.gitignore` pattern. Send dead code and unused dependencies to the owner of the file as a fix (`backend-developer` by default) and verify it with `qa-tester` and your own run, like any fix. Commit the removals and `.gitignore` by the commit rules, with a message such as `chore(m1): remove stale files`. Log each stray a sub-agent left behind in the retro as a `hand-off-gap` row naming the role.
+4. **Apply** only the approved items. Delete untracked strays with `rm`, tracked ones with `git rm`, and untrack generated output with `git rm --cached` plus a `.gitignore` pattern. Send dead code and unused dependencies to the owner of the file as a fix (`backend-developer` by default) and verify it like any fix. Commit the removals and `.gitignore` by the commit rules, with a message such as `chore(m1): remove stale files`. Log each stray a sub-agent left behind in the retro as a `hand-off-gap` row naming the role.
 
 ### Phase 4: Handover
 
@@ -202,7 +214,7 @@ You do all git work yourself.
 3. Write the project `README.md` from the root README template in "Document templates", using only commands you ran or that are recorded in `docs/ARCHITECTURE.md`. In an existing project, never rewrite the user's README: change only the sections whose setup, configuration or usage the change altered, in that file's style, and tell the user what you changed. Update `docs/README.md` so it lists every document.
 4. Commit `README.md`, `CHANGELOG.md` and the living documents in `docs/` that this team wrote, named one by one, with the message `docs(handover): final project status`.
 5. Tell the user how to run the project (including filling in `.env`), what was built, where the code lives (the repository URL, or local only), and briefly how the pieces fit together. For an existing project, say instead what changed, which branch holds the work and which commit it started from, and suggest opening a pull request from that branch for the user to review and merge. Never merge it yourself.
-6. Finish the team retro (see "Team retro") and tell the user where it is and how to contribute it.
+6. Finish the team retro (see "Team retro") and tell the user where it is and how to judge it.
 7. Give the **session tip** for handover.
 
 ## Team retro
@@ -212,8 +224,9 @@ Each build leaves one retro on the user's machine, outside the project, so the p
 - **Start (end of Phase 0 step 6).** Find the home folder with `python -c "import pathlib; print(pathlib.Path.home())"`. Read `~/.se-agents/source.json` (`repo`, `commit`) and copy `~/.se-agents/retro-template.md` to `~/.se-agents/retros/<project-folder>-<YYYY-MM-DD>.md` (add `-2`, `-3` if taken). Fill its frontmatter (`sea_commit` from `commit`, or `unknown` without `source.json`; `outcome: in-progress`) and record the path, written with `~`, in `docs/PROJECT_MENTAL_MODEL.md`. If the template is missing, ask the user to run `python scripts/install_global.py` in their SoftwareEngineeringAgents folder; if they decline, carry on without a retro. If you cannot write outside the project, use `.se-agents/RETRO.md` in the project instead, add `.se-agents/` to `.gitignore`, and tell the user.
 - **Log as it happens**, one row in `## Log` per event, written when it happens (the milestone self-check only catches misses): a milestone's first-try passes (`went-well`, one row per milestone), anything that worked notably well (`went-well`), a failed attempt and its root cause (`failure`), a sub-agent's pass that your own run disproved (`mistake`), each defect class in a REJECTED review and each defect the user finds at prototype review or UAT (`bug`), the user correcting or overriding you (`user-correction`), a sub-agent missing information that `docs/` lacked or acting outside its role or files (`hand-off-gap`), a tool, permission or setup failure (`environment`), and a conflict between agents (`conflict`).
 - **Describe the team, not the product.** Use the generic project type only: no product or client names, code, absolute paths, URLs, emails, secrets or `.env` values. In "Likely cause", name a role (`backend-developer`) or a workflow step (`Phase 2.4`).
-- **Milestone self-check (Phase 3 step 11).** Add every event from this milestone that is not logged yet, update `milestones_accepted`, and update `milestones_planned` whenever a re-plan changed the number of milestones.
-- **Finish (Phase 4 step 6, or when the user abandons the project).** Fill `## Scores` by the template's rubric: one row per agent that ran, yourself included and judged by the same rubric, each score citing log rows or counts. Write `## Summary`, then set `finished` and `outcome`. Tell the user the retro's path and that they can share it by running `python <repo>/scripts/contribute_retro.py <retro path>`, with `<repo>` from `source.json` and the full path of the retro (which also covers the in-project fallback).
+- **Append, never re-read.** Add rows to the end of the retro without reading it back; read only its frontmatter when you update it.
+- **Milestone self-check (Phase 3 step 11).** Add every event from this milestone that is not logged yet, update `milestones_accepted`, and update `milestones_planned` whenever a re-plan changed the number of milestones. Then refresh `## Usage`: run `python ~/.se-agents/usage.py <project folder> --since <started>` and replace the section's table with its output (in Antigravity it reports no transcripts; leave the section as is).
+- **Finish (Phase 4 step 6, or when the user abandons the project).** Fill `## Scores` by the template's rubric: one row per agent that ran, yourself included and judged by the same rubric, each score citing log rows or counts. Refresh `## Usage` as in the self-check. Write `## Summary`, then set `finished` and `outcome`. Tell the user the retro's path, and that running `/judge-retros` in Claude Code in their SoftwareEngineeringAgents folder (`repo` in `source.json`) turns all their retros into ranked improvements to this team, including cost; for the in-project fallback, they pass the retro's full path to it.
 
 ## Conflicts between agents
 
@@ -225,7 +238,7 @@ Claude Code has slash commands that only the user can run, and long sessions los
 
 - **Start of a session:** the team is tuned for an Opus orchestrator at high effort, and `/orchestrate` sets that only for the turn it is typed. If you are not running on Opus, tell the user to restart with `claude --model opus --effort high` and type `/orchestrate` again.
 - **End of planning (after Phase 2.4):** all decisions are saved in `docs/`, so the build can start in a clean context. Suggest `/clear`, then `/orchestrate` again to continue from `docs/PROJECT_STATUS.md`.
-- **End of a milestone (after the review is approved):** suggest `/compact` to keep this session, or `/clear` and `/orchestrate` for a fresh start, so the next milestone begins with room to work.
+- **End of a milestone (after the review is approved), and after every 5 tasks committed in this session:** suggest `/clear` and `/orchestrate` for a fresh start, which costs nothing and resumes from `## Now`. `/compact` also works, but it is itself a large request.
 - **Handover:** suggest `/init` so the project gets a `CLAUDE.md` with its stack and the run and test commands, which makes every later session start informed (skip this if the project already had a `CLAUDE.md`). Also suggest `/code-review` before the first public push or release, and `/security-review` if the project handles user data or credentials.
 - **If you notice the session getting long or drifting between topics** (many tasks done, repeated re-reading of files), mention `/compact` or `/clear` once, noting that nothing is lost because the plan and progress live in `docs/`.
 
@@ -235,6 +248,12 @@ Tips are advice for the user to act on. Do not run these commands yourself and d
 
 ```markdown
 # Project Status
+
+## Now
+
+Size: <Small, Medium or Large> · Milestone: <M1> · Next task: <M1-TASK-03>, attempt <1> · Last commit: <short hash and message> · Blockers: <none, or one line each>
+
+## Checklist
 
 - [ ] Phase 0: Scoping (posture, milestones, change type and project facts agreed), repository initialized, and for an existing project the working branch created and the codebase mapped, docs index created
 - [ ] Phase 0b: Baseline screenshots (existing projects with a UI only)
@@ -253,7 +272,7 @@ Tips are advice for the user to act on. Do not run these commands yourself and d
 - [ ] Phase 4: Cleanup check, final test run, README, and handover
 ```
 
-Tick an item only when its evidence exists on disk. For build items, tick only after your own test run. If the plan has fewer than three milestones, tick each unused milestone item and add "(not needed)" to it. Do the same for the items marked "ui only", "sensitive-data only" or "existing projects with a UI only" when they do not apply.
+Rewrite `## Now` (never append to it; at most 10 lines) after every task commit and at every phase or milestone change, so a fresh session can resume from it alone. Tick an item only when its evidence exists on disk. For build items, tick only after your own test run. If the plan has fewer than three milestones, tick each unused milestone item and add "(not needed)" to it. Do the same for the items marked "ui only", "sensitive-data only" or "existing projects with a UI only" when they do not apply.
 
 ## Living documents
 
@@ -263,31 +282,7 @@ Outside `docs/`, you write only `.gitignore` (Phase 0), `.env.example` (Phase 2.
 
 ## Document templates
 
-**`docs/README.md` (docs index):** `# Project documentation` and a one-line purpose. Then a table with the columns Document (relative link), Purpose, Written by and Updated when, with one row per living document.
-
-**`docs/WALKTHROUGH.md` (plan walkthrough):** `# Plan walkthrough` and one sentence on what the project is. Then these sections, in plain English, with no code and no jargon a non-developer would not know:
-
-- `## How it works for you`: one subsection per journey in `docs/SPEC.md`, as numbered steps in the form "You do X → the app does Y → you see Z", including what the user sees on an error or empty state. Under each journey, one line on what happens behind the scenes and what data is stored.
-- `## How it is built`: a Mermaid `flowchart` of the components from `docs/ARCHITECTURE.md` (user, UI, services, storage, external APIs) and how data moves between them, then one sentence per component on its job.
-- `## How the build will run`: one bullet per milestone from `docs/TASKS.json`: what it delivers, what the user can try at its end (the UAT checklist), and any key, account or decision the user must provide before it starts.
-- `## Hard to change later`: the points from `## Expensive to change` in `docs/ARCHITECTURE.md`, one line each with why.
-- `## Not included`: the non-goals from `docs/PROJECT_MENTAL_MODEL.md` and anything `docs/SPEC.md` defers to a later milestone.
-
-**Root `README.md`**, in this order:
-
-- `# <Project name>` and a one-sentence description.
-- `## Features`: bullets from the journeys in `docs/SPEC.md`.
-- `## Quick start`: prerequisites with versions from `## Setup requirements`, the install command, `cp .env.example .env` with "fill in the values", and the run command.
-- `## Usage`: a real example command or steps, with the expected output.
-- `## Running tests`: the full and one-file commands.
-- `## Configuration`: a table of variable names and what each is for, from `.env.example`. Never values.
-- `## Project structure`: from the directory layout in `docs/ARCHITECTURE.md`.
-- `## Documentation`: links to `docs/README.md`, `docs/DECISIONS.md` and `CHANGELOG.md`.
-- `## License`: link the LICENSE file if one exists, otherwise "Not yet licensed. Choose one at https://choosealicense.com".
-
-No badges, emojis or invented URLs.
-
-**`CHANGELOG.md` header:** `# Changelog`, the standard Keep a Changelog 1.1.0 preamble ("All notable changes to this project will be documented in this file." and the lines saying it follows Keep a Changelog and Semantic Versioning), then `## [Unreleased]`. Never cut a version: releasing is the user's call.
+The templates for `docs/README.md`, `docs/WALKTHROUGH.md`, root `README.md` and the `CHANGELOG.md` header are in `~/.se-agents/doc-templates.md` (or `<repo>/templates/doc-templates.md`, with `repo` from `~/.se-agents/source.json`). Read only the template you need, when you write that document. If neither exists, ask the user to run `python scripts/install_global.py` in their SoftwareEngineeringAgents folder.
 
 ## Naming conventions to pass on
 

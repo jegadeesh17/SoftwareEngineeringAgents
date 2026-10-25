@@ -77,22 +77,22 @@ antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep
 [roles.backend-developer]
 claude_model = "sonnet"
 claude_effort = "high"
-description = "Implements exactly one non-UI task (owner backend-developer) from docs/TASKS.json against the contracts in docs/ARCHITECTURE.md, or fixes it using failure output or review findings."
+description = "Implements exactly one non-UI task (owner backend-developer) from docs/TASKS.json against the contracts in docs/ARCHITECTURE.md, writes and runs its tests and records the run in docs/QA_RESULTS.json, or fixes it using failure output or review findings."
 runs_for = "always"
 slots = ["task-owner"]
 delegate_when = "each task with owner `backend-developer`, and each fix to it"
-produces = "code for that task"
+produces = "code and tests for that task, plus its `docs/QA_RESULTS.json` entry"
 claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
 
 [roles.frontend-developer]
 claude_model = "sonnet"
 claude_effort = "high"
-description = "Implements exactly one UI task (owner frontend-developer), including the Phase 2 prototype, in a new or existing frontend, using the built-in UI craft standard (plus Impeccable when installed) and DESIGN.md, or fixes it using failure output or review findings."
+description = "Implements exactly one UI task (owner frontend-developer), including the Phase 2 prototype, in a new or existing frontend, using the built-in UI craft standard (plus Impeccable when installed) and DESIGN.md, writes and runs its tests and records the run in docs/QA_RESULTS.json, or fixes it using failure output or review findings."
 runs_for = "ui"
 slots = ["task-owner"]
 delegate_when = "the prototype, each task with owner `frontend-developer`, and each fix to it"
-produces = "UI code for that task; root `DESIGN.md` after the prototype"
+produces = "UI code and tests for that task, plus its `docs/QA_RESULTS.json` entry; root `DESIGN.md` after the prototype"
 claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "Skill"]
 claude_skills = ["impeccable:impeccable"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
@@ -100,11 +100,11 @@ antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep
 [roles.qa-tester]
 claude_model = "haiku"
 claude_effort = "high"
-description = "Writes and runs automated tests for one task and records the exact command and exit code in docs/QA_RESULTS.json."
+description = "Once per milestone, writes the tests that per-task tests miss (uncovered acceptance criteria and cross-task wiring through real adapters), runs the full test command and records the exact command and exit code in docs/QA_RESULTS.json."
 runs_for = "always"
 slots = ["pipeline"]
-delegate_when = "after each implementation"
-produces = "tests and an entry in `docs/QA_RESULTS.json`"
+delegate_when = "once per milestone, after every task passes"
+produces = "milestone tests and one milestone entry in `docs/QA_RESULTS.json`"
 claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
 
@@ -134,11 +134,11 @@ antigravity_tools = ["view_file", "grep_search", "list_dir", "find_by_name", "ru
 [roles.platform-engineer]
 claude_model = "haiku"
 claude_effort = "high"
-description = "Implements exactly one CI, container or deployment-config task (owner platform-engineer) from docs/TASKS.json and writes the deploy runbook in docs/DEPLOYMENT.md. Never deploys."
+description = "Implements exactly one CI, container or deployment-config task (owner platform-engineer) from docs/TASKS.json, runs its checks and records the run in docs/QA_RESULTS.json, and writes the deploy runbook in docs/DEPLOYMENT.md. Never deploys."
 runs_for = "deploy"
 slots = ["task-owner"]
 delegate_when = "each task with owner `platform-engineer`, and each fix to it"
-produces = "CI, container and deployment config for that task; `docs/DEPLOYMENT.md`"
+produces = "CI, container and deployment config for that task, plus its `docs/QA_RESULTS.json` entry; `docs/DEPLOYMENT.md`"
 claude_tools = ["Read", "Write", "Edit", "Glob", "Grep", "Bash"]
 antigravity_tools = ["view_file", "write_to_file", "replace_file_content", "grep_search", "list_dir", "find_by_name", "run_command"]
 

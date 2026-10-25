@@ -12,10 +12,11 @@ This repository **defines** an AI engineering team. It is not where the team bui
 | `engine/build_agents.py` | Generator: renders `agents/` into each tool's format. |
 | `scripts/install_global.py` | Installer: copies generated files into `~/.claude/` and `~/.gemini/config/`. |
 | `templates/retro.md` | Retro template (source). The installer copies it to `~/.se-agents/retro-template.md`. |
+| `templates/doc-templates.md` | Document templates the orchestrator reads on demand (source). The installer copies it to `~/.se-agents/doc-templates.md`. |
+| `engine/usage.py` | Token usage per agent from Claude Code transcripts, for the retro's `## Usage` table. Standard library only; the installer copies it to `~/.se-agents/usage.py`. CLI: `python -m engine.usage PROJECT_DIR [--since YYYY-MM-DD]` |
 | `engine/retros.py` | Retro format: parse, validate and privacy scan. CLI: `python -m engine.retros FILE_OR_FOLDER...` |
-| `scripts/contribute_retro.py` | Contributes a user's retro to `retros/community/` by pull request. |
-| `retros/` | Contributed retros (`community/`) and the judge's `REPORT.md`. |
-| `.claude/commands/judge-retros.md` | Maintainer command `/judge-retros`: judges contributed retros and writes `retros/REPORT.md`. Not installed for users. |
+| `retros/` | The judge's `REPORT.md`. |
+| `.claude/commands/judge-retros.md` | Maintainer command `/judge-retros`: judges the retros in `~/.se-agents/retros/` (quality, cost and regressions) and writes `retros/REPORT.md`. Not installed for users. |
 | `.agents/rules/nomenclature-standards.md` | Optional global naming rule (installed with `--global-rules`). |
 | `docs/superpowers/` | Design specs and implementation plans. |
 
@@ -34,7 +35,7 @@ Other commands:
 - Single test: `python -m pytest tests/test_build_agents.py::test_name -q`
 - Check for stale generated files without writing: `python -m engine.build_agents --check` (exit 1 if stale)
 - Install into your home directory: `python scripts/install_global.py` (`--force`, `--global-rules`)
-- Check retros for format and privacy problems: `python -m engine.retros retros/community`
+- Check retros for format and privacy problems: `python -m engine.retros ~/.se-agents/retros`
 
 ## Tool names
 
