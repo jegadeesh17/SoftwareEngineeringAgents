@@ -6,7 +6,7 @@
 
 > An AI software engineering team that runs inside **Claude Code** and **Google Antigravity**. It interviews you, waits for your approval, then plans, builds, tests and reviews your project with specialist sub-agents. No API keys: it runs on the subscription you already have.
 
-It is built for non-technical builders ("vibe coders"), and it explains *why* professional teams work this way while it builds.
+It is built for engineers by default (`principal_architect` mode: you own and defend the architecture), with a `client_delivery` mode for non-technical builders ("vibe coders"). It explains *why* professional teams work this way while it builds.
 
 ## What makes it different
 
@@ -16,7 +16,10 @@ AI coding agents tend to fail in predictable ways. Each one has a specific guard
 |---|---|
 | Builds the wrong thing | **Approval gate.** The orchestrator interviews you and stops until you approve the scope. It never approves on your behalf. |
 | Says "tests pass" without proof | **Verify, don't trust.** A task is done only when the orchestrator re-runs the recorded test command itself and sees exit code 0. |
-| Loops forever on a failing fix | **Bounded retries.** A failing task goes back to the developer up to 3 times, then the orchestrator asks you. |
+| Loops forever on a failing fix | **Bounded retries.** A tactical failure (syntax, typo, logic inside one module) goes back to the developer up to 3 times, then the orchestrator asks you. |
+| The AI invents the architecture for you | **Architecture proposal gate.** You sketch the deep modules, data flow and seams first. The architect only critiques, with 2-3 provocations and at least 2 options each, and never picks. Your choices are recorded as an ADR before any task is planned. |
+| Design failures hide inside retries | **Split circuit breaker.** A seam or contract failure gets 0 retries and goes straight to you. Interfaces are locked (Seam Lock) before implementation, and builders cannot edit them. |
+| You cannot explain the code that was built | **Viva-voce gate.** After the milestone review passes, the reviewer asks you 2 technical questions about the code and grades your typed answers. The milestone is not complete until you can explain it. |
 | Nobody checks the work | **Adversarial review.** A read-only reviewer audits every milestone and returns APPROVED or REJECTED. |
 | Security is an afterthought | **Security review at two points.** For projects that handle personal, health, payment or credential data, a read-only security reviewer checks the architecture's security section before any task is planned, then audits each milestone for authorization gaps, injection and leaked secrets. |
 | Agents can do too much | **Least privilege.** Each role gets only the tools it needs: planners have no shell, and the reviewer cannot edit files. |
@@ -38,6 +41,8 @@ You <──> ORCHESTRATOR (the only agent that talks to you)
           │         (existing code only)
           3. Interviews you: UX, errors, non-goals
           4. STOPS: "Do you approve this scope?"  <- nothing is built without your yes
+          │     principal_architect: YOU propose modules, data flow and seams ("you decide" is refused),
+          │     architect critiques with provocations, you choose and justify -> ADR in docs/DECISIONS.md
           │     └─> ui-reviewer ───────> "before" screenshots (existing UI only)
           │
           ├─> product-analyst ────────> docs/SPEC.md
@@ -58,13 +63,16 @@ You <──> ORCHESTRATOR (the only agent that talks to you)
           │   for each task:
           ├─> backend-developer / frontend-developer / platform-engineer ──> tests first, then the code,
           │     runs the fast tests (with lint and type checks) -> docs/QA_RESULTS.json
-          │     fail -> back to the developer (up to 3 tries, then it asks you)
+          │     seam task first -> YOU sign off the interfaces (Seam Lock)
+          │     tactical fail -> back to the developer (up to 3 tries, then it asks you)
+          │     seam fail -> 0 retries, escalated to you
           │     pass -> the orchestrator re-runs the recorded command itself, then commits and
           │             pushes that task
           │
           │   for each milestone:
           ├─> qa-tester ──────────────> tests for uncovered criteria and cross-task wiring, full suite
-          ├─> adversarial-reviewer ───> read-only audit -> APPROVED or REJECTED
+          ├─> adversarial-reviewer ───> read-only audit + entropy check -> APPROVED or REJECTED
+          ├─> viva-voce (principal_architect) ─> 2 questions, YOU answer, graded until PASS -> docs/viva-log.md
           ├─> security-reviewer ──────> read-only security audit (sensitive-data only)
           ├─> ui-reviewer (UI only) ──> screenshots + UI craft audit -> APPROVED or REJECTED
           └─> YOU test it (UAT) ──────> feedback triaged and fixed until you accept the milestone
@@ -82,7 +90,7 @@ You <──> ORCHESTRATOR (the only agent that talks to you)
 | BackendDeveloper | the non-UI code and its tests | yes, and can run commands |
 | FrontendDeveloper | the prototype, UI code and its tests (UI projects only) | yes, can run commands and use the built-in UI craft standard (and Impeccable, if installed) |
 | QaTester | once per milestone: tests for uncovered criteria and cross-task wiring, a full test run in `docs/QA_RESULTS.json` | tests and docs, and can run commands |
-| AdversarialReviewer | APPROVED/REJECTED verdict | **no**: read-only, can run tests |
+| AdversarialReviewer | APPROVED/REJECTED verdict, architectural entropy audit, viva questions and grading (`principal_architect`) | **no**: read-only, can run tests |
 | UiReviewer | screenshots and an APPROVED/REJECTED verdict (UI projects only) | **no**: read-only, writes only screenshots under `.ui-review/` |
 | PlatformEngineer | CI, container and deploy config, `docs/DEPLOYMENT.md` (deploy projects only) | yes, can run commands; never deploys |
 | SecurityReviewer | APPROVED/REJECTED verdict on the design and on each milestone (sensitive-data projects only) | **no**: read-only |
@@ -115,6 +123,8 @@ Open an empty folder for a new project, or the folder of an existing one, then:
 
 - **Claude Code:** run `claude --model opus --effort high` and type `/orchestrate`. The command switches to Opus at high effort only for the turn you type it, so start the session on it; otherwise the orchestrator asks you to restart.
 - **Antigravity:** run `agy --agent orchestrator`, or pick `orchestrator` in `/agents`.
+
+**Modes.** `principal_architect` is the default. Type `/orchestrate client_delivery` (or tell the orchestrator) for the old hands-off flow: no architecture proposal, seam lock, split breaker, entropy audit or viva. For an existing project, say "deepen" to have the architect find 3-5 shallow modules to consolidate.
 
 **Existing project.** The orchestrator detects code in the folder and switches mode. It asks what kind of change it is (`Feature`, `Fix`, `Refactor`, `Redesign` or `Transformation`, see below) instead of for a product vision, and it won't start with uncommitted changes in the tree. It creates a working branch and never commits to `main`. The codebase analyst then maps the stack, conventions and a baseline test run, and the team follows the project's own style and test runner. If the baseline is red, the orchestrator asks whether to fix it first or accept the named failures. It plans one to three milestones sized to the change, and at handover it points you to the branch to open a pull request from.
 

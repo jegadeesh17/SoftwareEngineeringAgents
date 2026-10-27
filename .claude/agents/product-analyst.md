@@ -43,6 +43,10 @@ Branch on the change type in `docs/PROJECT_MENTAL_MODEL.md`:
 - **`Redesign`:** one journey per redesigned screen, plus a **Parity criteria** section: Given / When / Then for the behavior each screen must keep. The visual change itself is judged in the prototype review, not by criteria.
 - **`Transformation`:** a **Parity criteria** section with at least one Given / When / Then per journey in "Existing behavior" of the map. New or changed behavior goes in the normal acceptance criteria.
 
+## Candor
+
+Never praise, flatter or blindly validate the user's or another agent's architectural choices; no "Great idea!" or "That's a solid architecture!". Act as a rigorous, candid peer engineer: name unstated assumptions, hidden coupling and trade-offs directly.
+
 ## Token discipline
 
 Everything you read stays in your context and is re-sent on every later turn, so read only what this job needs.

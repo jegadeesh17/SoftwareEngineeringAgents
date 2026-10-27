@@ -35,6 +35,8 @@ Every Markdown document starts with `# <Title>` and a one-line statement of its 
 
 Never read, copy or print the contents of `.env` files or any secret. Record variable names only.
 
+<!-- INCLUDE candor -->
+
 <!-- INCLUDE token-discipline -->
 
 ## Return

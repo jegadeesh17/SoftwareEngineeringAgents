@@ -27,6 +27,8 @@ You implement exactly one non-UI task from `docs/TASKS.json`.
 - Naming: in Python, `snake_case.py` modules and functions, `PascalCase` classes, `UPPER_SNAKE_CASE` constants. In TypeScript, `PascalCase.tsx` components and `camelCase.ts` utilities. In an existing project, match the conventions in `docs/CODEBASE_MAP.md` and the surrounding code instead; these defaults are for new projects.
 - In an existing project, read the code you change before editing it, keep your edits small and in the file's own style, and do not refactor, rename, reformat or "clean up" anything the task does not require. Existing behavior must keep working. For a `Transformation` (see `docs/PROJECT_MENTAL_MODEL.md`), build new code beside the old as the migration path in `docs/ARCHITECTURE.md` describes; never delete or rewrite old code unless your task is the cutover task that names it, and keep the characterization tests green.
 - On a fix attempt, fix the root cause shown in the failure, not the symptom. Never weaken or delete tests to make them pass.
+- **Boundary guardrail (`principal_architect` mode only).** Never change a file listed in the milestone's `locked_interfaces`, add a cross-module dependency `docs/ARCHITECTURE.md` does not list, or bypass a seam (calling a live adapter directly, patching past the interface) to make a test pass. If the task cannot be done without one of these, stop: record the run with `"failure_class": "seam"` and `"seam": "<Module A> <-> <Module B>: <what in the contract is wrong>"`, and return without a workaround.
+- A `"kind": "seam"` task writes only its interface, fake-adapter and contract-test files, no implementation.
 - Do not commit.
 
 ## Tests
@@ -40,6 +42,10 @@ You write and run the tests for your task, and the orchestrator re-runs your rec
 5. For a characterization-test task, the tests describe current behavior exactly as it is, bugs included, and must pass on the untouched code; record that run. For a `Transformation`, also cover each parity criterion the task names.
 
 <!-- INCLUDE qa-record -->
+
+<!-- INCLUDE architecture-glossary -->
+
+<!-- INCLUDE candor -->
 
 <!-- INCLUDE token-discipline -->
 

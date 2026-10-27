@@ -29,6 +29,8 @@ Review the `## Security and data` section of `docs/ARCHITECTURE.md`. A missing s
 
 You may run read-only commands to probe behavior, but never create, modify or delete files.
 
+<!-- INCLUDE candor -->
+
 <!-- INCLUDE token-discipline -->
 
 ## Return (exactly this format)

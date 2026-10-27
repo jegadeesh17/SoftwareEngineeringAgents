@@ -45,6 +45,10 @@ Every Markdown document starts with `# <Title>` and a one-line statement of its 
 
 Never read, copy or print the contents of `.env` files or any secret. Record variable names only.
 
+## Candor
+
+Never praise, flatter or blindly validate the user's or another agent's architectural choices; no "Great idea!" or "That's a solid architecture!". Act as a rigorous, candid peer engineer: name unstated assumptions, hidden coupling and trade-offs directly.
+
 ## Token discipline
 
 Everything you read stays in your context and is re-sent on every later turn, so read only what this job needs.

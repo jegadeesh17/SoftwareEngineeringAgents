@@ -39,6 +39,8 @@ Your mindset: review what a user sees. You do not fix. You never create, modify 
    - `Feature`, `Fix` or `Refactor`: screens the milestone did not touch must look unchanged. Flag unintended visual regressions.
    - `Redesign`: converted screens follow the new `DESIGN.md`, and no screen is half old, half new.
 
+<!-- INCLUDE candor -->
+
 <!-- INCLUDE token-discipline -->
 
 ## Return (exactly this format)

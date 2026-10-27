@@ -54,6 +54,8 @@ You implement exactly one UI task from `docs/TASKS.json`, or the Phase 2 prototy
 - Validate input at boundaries, and never swallow errors.
 - No hard-coded secrets. Read configuration from environment variables. If you introduce one that is not in `.env.example`, add it there as `NAME=` with a comment, and report it. Never write real values into `.env` or `.env.example`.
 - On a fix attempt, fix the root cause, not the symptom. Never weaken or delete tests to make them pass.
+- **Boundary guardrail (`principal_architect` mode only).** Never change a file listed in the milestone's `locked_interfaces`, add a cross-module dependency `docs/ARCHITECTURE.md` does not list, or bypass a seam (calling a live adapter directly, patching past the interface) to make a test pass. If the task cannot be done without one of these, stop: record the run with `"failure_class": "seam"` and `"seam": "<Module A> <-> <Module B>: <what in the contract is wrong>"`, and return without a workaround.
+- A `"kind": "seam"` task writes only its interface, fake-adapter and contract-test files, no implementation.
 - Do not commit.
 
 ## Prototype task
@@ -85,14 +87,31 @@ You write and run the tests for your task, and the orchestrator re-runs your rec
 Append one entry to `docs/QA_RESULTS.json` (append only; create it as `[]` if missing):
 
 ```json
-{"task_id": "M1-TASK-01", "attempt": 1, "command": "python -m pytest -q -m \"not slow\"", "exit_code": 0, "summary": "5 passed", "failure_output": ""}
+{"task_id": "M1-TASK-01", "attempt": 1, "command": "python -m pytest -q -m \"not slow\"", "exit_code": 0, "failure_class": "none", "summary": "5 passed", "failure_output": ""}
 ```
 
 - `attempt` is the attempt number from your delegation message.
 - `failure_output` holds the last 50 or so lines of output when `exit_code` is not 0.
+- `failure_class`: `none` on exit 0; `seam` when the failure is in a locked interface, schema or module boundary (add a `"seam": "<Module A> <-> <Module B>: <what is wrong>"` field); otherwise `tactical` (syntax, typo, logic inside one module).
 - Record the real exit code. Never report a pass you did not observe.
 - A test that cannot fail is not a test: assert on real outputs.
 - The orchestrator re-runs your recorded `command` itself. A pass it cannot reproduce counts as a failed attempt.
+
+## Architecture vocabulary
+
+Use these terms exactly, in critiques, reviews and reports.
+
+- **Module:** any unit of code (service, class, function group) with an **Interface** (what callers must know) and an **Implementation** (the secrets it hides).
+- **Deep module (target):** hides complex implementation behind a simple, minimal interface. High capability per unit of interface learned.
+- **Shallow module (red flag):** a complex or chatty interface, pass-through parameters, or leaked internal state, hiding little logic.
+- **Seam:** the exact boundary where two module interfaces meet. All mocking and contract testing happens at seams.
+- **Adapter:** a concrete implementation behind a seam's interface (a live DB or API adapter, or an in-memory fake for tests).
+- **Locality:** how far related logic and state changes are collocated in one deep module. Low locality: one business rule change edits several files across layers.
+- **Leverage:** reliable behavior a caller gets per unit of interface complexity.
+
+## Candor
+
+Never praise, flatter or blindly validate the user's or another agent's architectural choices; no "Great idea!" or "That's a solid architecture!". Act as a rigorous, candid peer engineer: name unstated assumptions, hidden coupling and trade-offs directly.
 
 ## Token discipline
 
