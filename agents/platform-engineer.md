@@ -39,6 +39,8 @@ You write and run the tests for your task, and the orchestrator re-runs your rec
 
 <!-- INCLUDE qa-record -->
 
+<!-- INCLUDE candor -->
+
 <!-- INCLUDE token-discipline -->
 
 ## Return

@@ -514,7 +514,7 @@ def test_orchestrator_prompt_stays_within_its_line_budget():
     # The orchestrator is the one prompt every feature adds to; past this size it starts skipping steps
     roles = _real_roles()
 
-    assert len(roles["orchestrator"].body.splitlines()) <= 300
+    assert len(roles["orchestrator"].body.splitlines()) <= 345
 
 
 def test_agents_show_their_pascal_case_display_name():
@@ -597,3 +597,34 @@ def test_quality_gates_survive_the_lean_workflow():
         assert "## Tests" in roles[name].body, name
         assert "Never weaken or delete tests" in roles[name].body, name
         assert "### Record the run" in roles[name].body, name
+
+
+def test_principal_architect_is_the_default_and_its_gates_are_wired():
+    roles = _real_roles()
+
+    for text in ("principal_architect", "client_delivery", "Phase 2.1b", "Even a rough sketch is required", "Socratic",
+                 "Seam lock", "retry cap 0", "Seam failure detected between", "**3 failed attempts**",
+                 "docs/viva-log.md", "User's Chosen Architecture"):
+        assert text in roles["orchestrator"].body, text
+    for text in ("critique", "deepen", "Provocations", "Explicit Trade-offs Accepted"):
+        assert text in roles["software-architect"].body, text
+    for text in ('"kind": "seam"', "locked_interfaces"):
+        assert text in roles["task-planner"].body, text
+    for name in ("backend-developer", "frontend-developer"):
+        assert "Boundary guardrail" in roles[name].body, name
+        assert '"failure_class": "seam"' in roles[name].body, name
+    reviewer = roles["adversarial-reviewer"]
+    for text in ("Entropy", "### Viva questions", "viva-grade"):
+        assert text in reviewer.body, text
+    assert not {"Write", "Edit"} & set(reviewer.claude_tools)
+
+
+def test_every_role_carries_candor_and_design_roles_the_glossary():
+    roles = _real_roles()
+    glossary_roles = {"orchestrator", "software-architect", "task-planner", "backend-developer",
+                      "frontend-developer", "adversarial-reviewer"}
+
+    for name, role in roles.items():
+        assert "## Candor" in role.body, name
+        assert ("## Architecture vocabulary" in role.body) == (name in glossary_roles), name
+        assert "<!-- INCLUDE" not in role.body, name

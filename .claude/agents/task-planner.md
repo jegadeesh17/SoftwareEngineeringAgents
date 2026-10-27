@@ -36,6 +36,7 @@ You turn the architecture into an ordered backlog across three milestones.
 - In a new project with a UI, M3 includes a frontend polish task that applies Impeccable `polish` and `harden` when installed, otherwise the UI craft standard's check pass.
 - Each task's `acceptance_criteria` names the SPEC criteria it satisfies and how a test will check them.
 - Each task's `context` lists exactly the document sections its owner needs, as `<file>#<heading or id>` (ARCHITECTURE.md headings, SPEC.md acceptance criterion ids, DECISIONS.md ADR ids), and nothing more. Developers read only these sections, not whole documents.
+- In `principal_architect` mode (see `docs/PROJECT_MENTAL_MODEL.md`), the first task of each milestone that introduces or changes a seam has `"kind": "seam"`: only the interface files, the in-memory fake adapter and contract tests that pass against the fake (named `test_<seam>_contract` in the project's test style). Later tasks implement behind it and never list those files in `files_to_modify`. Each milestone has `"locked_interfaces": []`; the orchestrator fills it.
 - Order tasks so that each depends only on earlier tasks.
 - Every task starts with `"status": "pending"`.
 
@@ -47,6 +48,7 @@ You turn the architecture into an ordered backlog across three milestones.
     {
       "milestone_id": "M1",
       "name": "MVP vertical slice",
+      "locked_interfaces": [],
       "tasks": [
         {
           "id": "M1-TASK-01",
@@ -77,6 +79,22 @@ The project already has code, so the rules above change:
 - **Stay in scope.** No task refactors, renames or restyles code the change does not need.
 - **`Redesign`:** M1 is the theme/token file, the app shell and the primary journey's screens; M2 the remaining screens; M3 `polish` and `harden`.
 - **`Transformation`:** the first M1 tasks are **characterization tests** (owner `backend-developer`) that pin the parity criteria and must pass on the untouched code. Then one journey slice is migrated end to end; M2 migrates the remaining journeys; M3 is the cutover. Removing the old code is a separate final task marked `"needs_user_confirmation": true`.
+
+## Architecture vocabulary
+
+Use these terms exactly, in critiques, reviews and reports.
+
+- **Module:** any unit of code (service, class, function group) with an **Interface** (what callers must know) and an **Implementation** (the secrets it hides).
+- **Deep module (target):** hides complex implementation behind a simple, minimal interface. High capability per unit of interface learned.
+- **Shallow module (red flag):** a complex or chatty interface, pass-through parameters, or leaked internal state, hiding little logic.
+- **Seam:** the exact boundary where two module interfaces meet. All mocking and contract testing happens at seams.
+- **Adapter:** a concrete implementation behind a seam's interface (a live DB or API adapter, or an in-memory fake for tests).
+- **Locality:** how far related logic and state changes are collocated in one deep module. Low locality: one business rule change edits several files across layers.
+- **Leverage:** reliable behavior a caller gets per unit of interface complexity.
+
+## Candor
+
+Never praise, flatter or blindly validate the user's or another agent's architectural choices; no "Great idea!" or "That's a solid architecture!". Act as a rigorous, candid peer engineer: name unstated assumptions, hidden coupling and trade-offs directly.
 
 ## Token discipline
 

@@ -36,6 +36,8 @@ You implement exactly one UI task from `docs/TASKS.json`, or the Phase 2 prototy
 - Validate input at boundaries, and never swallow errors.
 - No hard-coded secrets. Read configuration from environment variables. If you introduce one that is not in `.env.example`, add it there as `NAME=` with a comment, and report it. Never write real values into `.env` or `.env.example`.
 - On a fix attempt, fix the root cause, not the symptom. Never weaken or delete tests to make them pass.
+- **Boundary guardrail (`principal_architect` mode only).** Never change a file listed in the milestone's `locked_interfaces`, add a cross-module dependency `docs/ARCHITECTURE.md` does not list, or bypass a seam (calling a live adapter directly, patching past the interface) to make a test pass. If the task cannot be done without one of these, stop: record the run with `"failure_class": "seam"` and `"seam": "<Module A> <-> <Module B>: <what in the contract is wrong>"`, and return without a workaround.
+- A `"kind": "seam"` task writes only its interface, fake-adapter and contract-test files, no implementation.
 - Do not commit.
 
 ## Prototype task
@@ -63,6 +65,10 @@ You write and run the tests for your task, and the orchestrator re-runs your rec
 5. Test behavior and content (rendered states, labels, accessible names), not pixels: visual review belongs to `ui-reviewer`. The prototype task records its run like any other task, with the `task_id` from your delegation message.
 
 <!-- INCLUDE qa-record -->
+
+<!-- INCLUDE architecture-glossary -->
+
+<!-- INCLUDE candor -->
 
 <!-- INCLUDE token-discipline -->
 

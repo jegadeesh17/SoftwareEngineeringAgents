@@ -12,6 +12,8 @@ The orchestrator reads the template it needs from this file when it writes that 
 - `## Hard to change later`: the points from `## Expensive to change` in `docs/ARCHITECTURE.md`, one line each with why.
 - `## Not included`: the non-goals from `docs/PROJECT_MENTAL_MODEL.md` and anything `docs/SPEC.md` defers to a later milestone.
 
+**`docs/viva-log.md` (`principal_architect` only):** `# Viva log` and a one-line purpose. Then one `## <Milestone> round <n> (YYYY-MM-DD)` section per round with Question, Answer summary (at most 3 lines, the user's own reasoning), Grade and Follow-up. Never include grading keys.
+
 **Root `README.md`**, in this order:
 
 - `# <Project name>` and a one-sentence description.

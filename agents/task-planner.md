@@ -26,6 +26,7 @@ You turn the architecture into an ordered backlog across three milestones.
 - In a new project with a UI, M3 includes a frontend polish task that applies Impeccable `polish` and `harden` when installed, otherwise the UI craft standard's check pass.
 - Each task's `acceptance_criteria` names the SPEC criteria it satisfies and how a test will check them.
 - Each task's `context` lists exactly the document sections its owner needs, as `<file>#<heading or id>` (ARCHITECTURE.md headings, SPEC.md acceptance criterion ids, DECISIONS.md ADR ids), and nothing more. Developers read only these sections, not whole documents.
+- In `principal_architect` mode (see `docs/PROJECT_MENTAL_MODEL.md`), the first task of each milestone that introduces or changes a seam has `"kind": "seam"`: only the interface files, the in-memory fake adapter and contract tests that pass against the fake (named `test_<seam>_contract` in the project's test style). Later tasks implement behind it and never list those files in `files_to_modify`. Each milestone has `"locked_interfaces": []`; the orchestrator fills it.
 - Order tasks so that each depends only on earlier tasks.
 - Every task starts with `"status": "pending"`.
 
@@ -37,6 +38,7 @@ You turn the architecture into an ordered backlog across three milestones.
     {
       "milestone_id": "M1",
       "name": "MVP vertical slice",
+      "locked_interfaces": [],
       "tasks": [
         {
           "id": "M1-TASK-01",
@@ -67,6 +69,10 @@ The project already has code, so the rules above change:
 - **Stay in scope.** No task refactors, renames or restyles code the change does not need.
 - **`Redesign`:** M1 is the theme/token file, the app shell and the primary journey's screens; M2 the remaining screens; M3 `polish` and `harden`.
 - **`Transformation`:** the first M1 tasks are **characterization tests** (owner `backend-developer`) that pin the parity criteria and must pass on the untouched code. Then one journey slice is migrated end to end; M2 migrates the remaining journeys; M3 is the cutover. Removing the old code is a separate final task marked `"needs_user_confirmation": true`.
+
+<!-- INCLUDE architecture-glossary -->
+
+<!-- INCLUDE candor -->
 
 <!-- INCLUDE token-discipline -->
 
