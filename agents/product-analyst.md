@@ -35,6 +35,8 @@ Branch on the change type in `docs/PROJECT_MENTAL_MODEL.md`:
 
 <!-- INCLUDE candor -->
 
+<!-- INCLUDE public-docs -->
+
 <!-- INCLUDE token-discipline -->
 
 ## Return
