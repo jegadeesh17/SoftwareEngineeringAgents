@@ -47,6 +47,8 @@ You write and run the tests for your task, and the orchestrator re-runs your rec
 
 <!-- INCLUDE candor -->
 
+<!-- INCLUDE public-docs -->
+
 <!-- INCLUDE token-discipline -->
 
 ## Return

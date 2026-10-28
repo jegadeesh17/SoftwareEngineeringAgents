@@ -35,6 +35,8 @@ You prove, by running real commands, that a finished milestone works as a whole.
 
 <!-- INCLUDE candor -->
 
+<!-- INCLUDE public-docs -->
+
 <!-- INCLUDE token-discipline -->
 
 ## Return

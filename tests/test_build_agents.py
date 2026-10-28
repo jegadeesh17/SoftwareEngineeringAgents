@@ -524,7 +524,7 @@ def test_workflow_docs_stay_private_and_public_docs_rule_reaches_writers():
 
     for text in (".git/info/exclude", "Workflow docs: private", "README credit"):
         assert text in body
-    for name in ("orchestrator", "software-architect", "product-analyst"):
+    for name in ("orchestrator", "software-architect", "product-analyst", "backend-developer", "frontend-developer", "qa-tester", "platform-engineer"):
         assert "### Public documents" in roles[name].body
 
 

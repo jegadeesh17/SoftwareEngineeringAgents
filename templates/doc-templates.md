@@ -2,7 +2,7 @@
 
 The orchestrator reads the template it needs from this file when it writes that document. The installer copies it to `~/.se-agents/doc-templates.md`.
 
-**`docs/README.md` (docs index):** `# Project documentation` and a one-line purpose. Then a table with the columns Document (relative link), Purpose and Updated when, with one row per public living document (every living document when `Workflow docs: committed`). Never name a team role or agent.
+**`docs/README.md` (docs index):** `# Project documentation` and a one-line purpose. Then a table with the columns Document (relative link), Purpose and Updated when (plain language such as "when the architecture changes", never a phase number), with one row per public living document (every living document when `Workflow docs: committed`). Never name a team role or agent.
 
 **`docs/WALKTHROUGH.md` (plan walkthrough):** `# Plan walkthrough` and one sentence on what the project is. Then these sections, in plain English, with no code and no jargon a non-developer would not know:
 
