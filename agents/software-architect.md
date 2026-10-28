@@ -79,6 +79,8 @@ Architecture Decision Records (ADRs) in one file.
 
 <!-- INCLUDE candor -->
 
+<!-- INCLUDE public-docs -->
+
 <!-- INCLUDE token-discipline -->
 
 ## Return

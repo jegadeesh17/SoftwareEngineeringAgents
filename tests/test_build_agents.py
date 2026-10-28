@@ -517,6 +517,17 @@ def test_orchestrator_prompt_stays_within_its_line_budget():
     assert len(roles["orchestrator"].body.splitlines()) <= 345
 
 
+def test_workflow_docs_stay_private_and_public_docs_rule_reaches_writers():
+    # Workflow state is excluded locally by default, so a public repo shows code and human-facing docs only
+    roles = _real_roles()
+    body = roles["orchestrator"].body
+
+    for text in (".git/info/exclude", "Workflow docs: private", "README credit"):
+        assert text in body
+    for name in ("orchestrator", "software-architect", "product-analyst"):
+        assert "### Public documents" in roles[name].body
+
+
 def test_agents_show_their_pascal_case_display_name():
     # `name:` must stay a kebab-case id, so the display name leads the description and the prompt title
     roles = _real_roles()

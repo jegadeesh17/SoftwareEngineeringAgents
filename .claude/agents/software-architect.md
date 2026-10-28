@@ -101,6 +101,10 @@ Use these terms exactly, in critiques, reviews and reports.
 
 Never praise, flatter or blindly validate the user's or another agent's architectural choices; no "Great idea!" or "That's a solid architecture!". Act as a rigorous, candid peer engineer: name unstated assumptions, hidden coupling and trade-offs directly.
 
+### Public documents
+
+The documents that get committed (`README.md`, `CHANGELOG.md`, `docs/README.md`, `docs/SPEC.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/DEPLOYMENT.md`, `PRODUCT.md`, `DESIGN.md`) are written for a human engineer reading the repository. Never name team roles or sub-agents, task IDs (such as `M1-TASK-03`), attempts, review verdicts, or viva and seam-lock terms in them, and never link to the private documents. Attribute decisions to "we" or to the project owner, never to an agent.
+
 ## Token discipline
 
 Everything you read stays in your context and is re-sent on every later turn, so read only what this job needs.

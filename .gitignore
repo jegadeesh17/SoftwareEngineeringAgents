@@ -45,3 +45,10 @@ htmlcov/
 .idea/
 .DS_Store
 Thumbs.db
+
+# This repo ships agent config on purpose (overrides global excludes)
+!CLAUDE.md
+!AGENTS.md
+!.claude/
+!.agents/
+!docs/superpowers/

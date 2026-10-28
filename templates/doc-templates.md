@@ -2,7 +2,7 @@
 
 The orchestrator reads the template it needs from this file when it writes that document. The installer copies it to `~/.se-agents/doc-templates.md`.
 
-**`docs/README.md` (docs index):** `# Project documentation` and a one-line purpose. Then a table with the columns Document (relative link), Purpose, Written by and Updated when, with one row per living document.
+**`docs/README.md` (docs index):** `# Project documentation` and a one-line purpose. Then a table with the columns Document (relative link), Purpose and Updated when, with one row per public living document (every living document when `Workflow docs: committed`). Never name a team role or agent.
 
 **`docs/WALKTHROUGH.md` (plan walkthrough):** `# Plan walkthrough` and one sentence on what the project is. Then these sections, in plain English, with no code and no jargon a non-developer would not know:
 
@@ -24,6 +24,7 @@ The orchestrator reads the template it needs from this file when it writes that 
 - `## Configuration`: a table of variable names and what each is for, from `.env.example`. Never values.
 - `## Project structure`: from the directory layout in `docs/ARCHITECTURE.md`.
 - `## Documentation`: links to `docs/README.md`, `docs/DECISIONS.md` and `CHANGELOG.md`.
+- `## How this was built` (only when `README credit: yes`): "Designed and built by <owner, from `git config user.name`> with [SoftwareEngineeringAgents](<url>), a multi-agent workflow for Claude Code." In a `principal_architect` project, add: "I set the scope, architecture and key decisions (see [docs/DECISIONS.md](docs/DECISIONS.md)); the agents implemented and reviewed tasks under that plan." Leave out the link if there is no URL.
 - `## License`: link the LICENSE file if one exists, otherwise "Not yet licensed. Choose one at https://choosealicense.com".
 
 No badges, emojis or invented URLs.
