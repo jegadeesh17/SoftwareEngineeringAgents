@@ -9,6 +9,7 @@ This repository **defines** an AI engineering team. It is not where the team bui
 | `agents/roles.toml`, `agents/*.md` | **Source of truth.** Role metadata and one prompt per role. Edit here. |
 | `agents/shared/` | Prompt fragments inlined into roles with `<!-- INCLUDE name -->` (for example the UI craft standard). Source; edit here. |
 | `.claude/agents/`, `.agents/agents/`, `templates/claude/orchestrate.md` | **Generated.** Never edit by hand. |
+| `plugin/`, `.claude-plugin/marketplace.json` | **Generated.** The Claude Code plugin `se-agents` and the marketplace that lists it. The plugin's agents and `/se-agents:orchestrate` carry the plugin prefix, and `plugin/team/` holds copies of the retro template, the document templates and `usage.py`, which the plugin's orchestrator reads through `${CLAUDE_PLUGIN_ROOT}`. Check with `claude plugin validate ./plugin`. |
 | `engine/build_agents.py` | Generator: renders `agents/` into each tool's format. |
 | `scripts/install_global.py` | Installer: copies generated files into `~/.claude/` and `~/.gemini/config/`. |
 | `templates/retro.md` | Retro template (source). The installer copies it to `~/.se-agents/retro-template.md`. |

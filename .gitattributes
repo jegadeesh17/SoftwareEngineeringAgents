@@ -3,3 +3,5 @@ agents/** text eol=lf
 .claude/agents/*.md text eol=lf
 .agents/agents/**/agent.md text eol=lf
 templates/claude/*.md text eol=lf
+plugin/** text eol=lf
+.claude-plugin/*.json text eol=lf

@@ -11,8 +11,8 @@ rel = os.path.relpath(os.path.abspath(f), root).replace("\\", "/")
 parts = rel.split("/")
 
 generated = False
-if rel == "templates/claude/orchestrate.md":
-    generated = True
+if rel in ("templates/claude/orchestrate.md", ".claude-plugin/marketplace.json") or parts[0] == "plugin":
+    generated = True  # the Claude Code plugin in plugin/ is generated in full
 elif len(parts) == 3 and parts[:2] == [".claude", "agents"] and parts[2].endswith(".md"):
     generated = os.path.isfile(os.path.join(root, "agents", parts[2]))  # hand-written helpers stay editable
 elif len(parts) == 4 and parts[:2] == [".agents", "agents"] and parts[3] == "agent.md":

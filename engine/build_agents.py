@@ -2,6 +2,7 @@
 Generate native sub-agent files for Claude Code and Antigravity from agents/.
 
 Source of truth: agents/roles.toml (metadata) + agents/<role>.md (prompt bodies).
+Also renders a Claude Code plugin in plugin/ and its marketplace in .claude-plugin/marketplace.json.
 Run `python -m engine.build_agents` after editing agents/, or add --check to verify without writing.
 """
 
@@ -12,7 +13,7 @@ import sys
 import tomllib
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SOURCE_DIR = Path("agents")
@@ -40,6 +41,50 @@ CLAUDE_EFFORTS = ("low", "medium", "high", "xhigh", "max")
 ROLE_NAME = re.compile(r"[a-z][a-z0-9-]*")
 # Sub-agents are installed globally, so keep other sessions from routing unrelated work to them
 SUBAGENT_SCOPE = " Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
+
+# Claude Code plugin target. Kept out of build_outputs(): the installer maps every key of that dict into the home folder.
+PLUGIN_NAME = "se-agents"
+MARKETPLACE_NAME = "se-agents"
+REPOSITORY_URL = "https://github.com/jegadeesh17/SoftwareEngineeringAgents"
+AUTHOR_NAME = "Jegadeesh D"
+PLUGIN_DIR = Path("plugin")
+PLUGIN_MANIFEST_PATH = PLUGIN_DIR / ".claude-plugin" / "plugin.json"
+MARKETPLACE_PATH = Path(".claude-plugin") / "marketplace.json"
+PLUGIN_AGENTS_DIR = PLUGIN_DIR / "agents"
+PLUGIN_COMMAND_PATH = PLUGIN_DIR / "commands" / "orchestrate.md"
+PLUGIN_TEAM_DIR = PLUGIN_DIR / "team"
+# The files the installer copies to ~/.se-agents/ (TEAM_FILES in scripts/install_global.py); the plugin ships them
+# inside itself instead, because files outside the plugin directory are not copied into the plugin cache
+PLUGIN_TEAM_FILES = [
+    (Path("templates") / "retro.md", "retro-template.md"),
+    (Path("templates") / "doc-templates.md", "doc-templates.md"),
+    (Path("engine") / "usage.py", "usage.py"),
+]
+# Plugin commands and agents are namespaced: /se-agents:orchestrate and se-agents:<role>
+PLUGIN_SUBAGENT_SCOPE = SUBAGENT_SCOPE.replace("/orchestrate", f"/{PLUGIN_NAME}:orchestrate")
+# Claude Code substitutes ${CLAUDE_PLUGIN_ROOT} in command bodies, so the plugin's orchestrator reads the team files
+# where the plugin is installed. A plugin install has no clone and no ~/.se-agents/source.json.
+PLUGIN_COMMAND_REWRITES: List[Tuple[str, str]] = [
+    ("Read `~/.se-agents/source.json` (`repo`, `commit`) and copy `~/.se-agents/retro-template.md` to",
+     "Copy `${CLAUDE_PLUGIN_ROOT}/team/retro-template.md` to"),
+    ("(`sea_commit` from `commit`, or `unknown` without `source.json`;",
+     "(`sea_commit`: `plugin-` followed by the last folder name of `${CLAUDE_PLUGIN_ROOT}`;"),
+    ("If the template is missing, ask the user to run `python scripts/install_global.py` in their SoftwareEngineeringAgents folder;",
+     f"If the template is missing, ask the user to reinstall the plugin with `/plugin install {PLUGIN_NAME}@{MARKETPLACE_NAME}`;"),
+    ("`python ~/.se-agents/usage.py ", "`python \"${CLAUDE_PLUGIN_ROOT}/team/usage.py\" "),
+    ("in their SoftwareEngineeringAgents folder (`repo` in `source.json`)", f"in a clone of {REPOSITORY_URL}"),
+    ("with the link from `git -C <repo from ~/.se-agents/source.json> remote get-url origin` written as a browser URL "
+     "(no trailing `.git`), or without a link if that fails.",
+     f"with the link {REPOSITORY_URL}."),
+    ("`~/.se-agents/doc-templates.md` (or `<repo>/templates/doc-templates.md`, with `repo` from `~/.se-agents/source.json`)",
+     "`${CLAUDE_PLUGIN_ROOT}/team/doc-templates.md`"),
+    ("If neither exists, ask the user to run `python scripts/install_global.py` in their SoftwareEngineeringAgents folder.",
+     f"If it is missing, ask the user to reinstall the plugin with `/plugin install {PLUGIN_NAME}@{MARKETPLACE_NAME}`."),
+    ("and delegate by **Id**.",
+     f"and delegate by **Id** with the plugin prefix, as `{PLUGIN_NAME}:<Id>` (for example `{PLUGIN_NAME}:backend-developer`)."),
+]
+# A bare /orchestrate, but not a path such as templates/claude/orchestrate.md
+PLUGIN_ORCHESTRATE = re.compile(r"(?<![\w:/-])/orchestrate\b")
 
 
 @dataclass(frozen=True)
@@ -193,17 +238,17 @@ def _yaml_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
-def _description(role: Role) -> str:
+def _description(role: Role, scope: str = SUBAGENT_SCOPE) -> str:
     # The id in `name:` must stay kebab-case, so the PascalCase display name leads the description shown in agent lists
     text = f"{display_name(role.name)}: {role.description}"
-    return text if role.main_agent else text + SUBAGENT_SCOPE
+    return text if role.main_agent else text + scope
 
 
-def render_claude_agent(role: Role) -> str:
+def render_claude_agent(role: Role, scope: str = SUBAGENT_SCOPE) -> str:
     return (
         "---\n"
         f"name: {role.name}\n"
-        f"description: {_yaml_string(_description(role))}\n"
+        f"description: {_yaml_string(_description(role, scope))}\n"
         f"tools: {', '.join(role.claude_tools)}\n"
         f"model: {role.claude_model}\n"
         + (f"effort: {role.claude_effort}\n" if role.claude_effort else "")
@@ -257,6 +302,68 @@ def build_outputs(roles: List[Role]) -> Dict[Path, str]:
     return outputs
 
 
+def render_plugin_command_body(body: str) -> str:
+    # Lenient on purpose: a body without these sentences is left as is; tests check the real plugin command's output
+    for old, new in PLUGIN_COMMAND_REWRITES:
+        body = body.replace(old, new)
+    return PLUGIN_ORCHESTRATE.sub(f"/{PLUGIN_NAME}:orchestrate", body)
+
+
+def _json(data) -> str:
+    return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+
+
+def build_plugin_outputs(roles: List[Role], root: Path) -> Dict[Path, str]:
+    """The Claude Code plugin in plugin/ and the marketplace that lists it."""
+    outputs: Dict[Path, str] = {}
+    table = render_team_table(roles)
+    sub_agents = [r for r in roles if not r.main_agent]
+    for role in roles:
+        if role.main_agent:
+            body = render_plugin_command_body(role.body.replace(TEAM_TABLE_MARKER, table))
+            outputs[PLUGIN_COMMAND_PATH] = render_claude_command(replace(role, body=body))
+        else:
+            outputs[PLUGIN_AGENTS_DIR / f"{role.name}.md"] = render_claude_agent(role, scope=PLUGIN_SUBAGENT_SCOPE)
+
+    description = (
+        f"An AI engineering team: /{PLUGIN_NAME}:orchestrate leads {len(sub_agents)} specialist sub-agents "
+        "through Plan, Setup and Build."
+    )
+    # No "version": a version pins installs until it is bumped, so without one installs follow the git commits
+    outputs[PLUGIN_MANIFEST_PATH] = _json({
+        "name": PLUGIN_NAME,
+        "description": description,
+        "author": {"name": AUTHOR_NAME},
+        "homepage": REPOSITORY_URL,
+        "repository": REPOSITORY_URL,
+        "license": "MIT",
+        "keywords": ["agents", "orchestration", "software-engineering"],
+    })
+    outputs[MARKETPLACE_PATH] = _json({
+        "name": MARKETPLACE_NAME,
+        "owner": {"name": AUTHOR_NAME},
+        "metadata": {"description": description},
+        "plugins": [{
+            "name": PLUGIN_NAME,
+            "source": "./" + PLUGIN_DIR.as_posix(),
+            "description": description,
+            "category": "development",
+            "homepage": REPOSITORY_URL,
+        }],
+    })
+
+    for source, name in PLUGIN_TEAM_FILES:
+        path = root / source
+        if not path.exists():
+            raise ValueError(f"plugin team file not found: {source.as_posix()}")
+        outputs[PLUGIN_TEAM_DIR / name] = normalize_newlines(path.read_text(encoding="utf-8-sig"))
+    return outputs
+
+
+def build_all_outputs(roles: List[Role], root: Path) -> Dict[Path, str]:
+    return {**build_outputs(roles), **build_plugin_outputs(roles, root)}
+
+
 def write_outputs(outputs: Dict[Path, str], root: Path) -> None:
     for rel, content in outputs.items():
         path = root / rel
@@ -274,6 +381,7 @@ def find_orphans(outputs: Dict[Path, str], root: Path) -> List[Path]:
     for base, pattern, role_of in (
         (CLAUDE_AGENTS_DIR, "*.md", lambda rel: rel.stem),
         (ANTIGRAVITY_AGENTS_DIR, "*/agent.md", lambda rel: rel.parent.name),
+        (PLUGIN_AGENTS_DIR, "*.md", lambda rel: rel.stem),
     ):
         if (root / base).exists():
             for path in (root / base).glob(pattern):
@@ -282,9 +390,10 @@ def find_orphans(outputs: Dict[Path, str], root: Path) -> List[Path]:
                 if rel not in outputs and text is not None and f"{GENERATED_MARKER}{role_of(rel)}.md —" in text:
                     orphans.append(rel)
     # The slash command belongs to whichever role is the main agent, so any generated banner counts
-    command = root / CLAUDE_COMMAND_PATH
-    if CLAUDE_COMMAND_PATH not in outputs and command.exists() and GENERATED_MARKER in (_read_text(command) or ""):
-        orphans.append(CLAUDE_COMMAND_PATH)
+    for command_path in (CLAUDE_COMMAND_PATH, PLUGIN_COMMAND_PATH):
+        command = root / command_path
+        if command_path not in outputs and command.exists() and GENERATED_MARKER in (_read_text(command) or ""):
+            orphans.append(command_path)
     return sorted(orphans)
 
 
@@ -319,7 +428,7 @@ def main(argv: Optional[List[str]] = None, root: Optional[Path] = None) -> int:
     root = root or REPO_ROOT
 
     try:
-        outputs = build_outputs(load_roles(root / SOURCE_DIR))
+        outputs = build_all_outputs(load_roles(root / SOURCE_DIR), root)
     except ValueError as e:
         print(f"error: {e}", file=sys.stderr)
         return 2

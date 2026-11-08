@@ -17,7 +17,7 @@ def _text(path):
 
 
 def _copy_repo(repo):
-    for name in ("agents", ".claude", ".agents", "templates", "engine"):
+    for name in ("agents", ".claude", ".agents", "templates", "engine", "plugin", ".claude-plugin"):
         shutil.copytree(ROOT / name, repo / name)
     return repo
 

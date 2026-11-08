@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from engine import build_agents
@@ -34,6 +36,10 @@ def make_source(root, toml_text, prompts):
     (src / "roles.toml").write_text(toml_text, encoding="utf-8")
     for name, body in prompts.items():
         (src / f"{name}.md").write_text(body, encoding="utf-8")
+    # The plugin target ships copies of the team files, so every source tree needs them
+    for source, _ in build_agents.PLUGIN_TEAM_FILES:
+        (root / source).parent.mkdir(parents=True, exist_ok=True)
+        (root / source).write_text(f"stub {source.name}\n", encoding="utf-8")
     return root
 
 
@@ -639,3 +645,80 @@ def test_every_role_carries_candor_and_design_roles_the_glossary():
         assert "## Candor" in role.body, name
         assert ("## Architecture vocabulary" in role.body) == (name in glossary_roles), name
         assert "<!-- INCLUDE" not in role.body, name
+
+
+def test_plugin_and_marketplace_are_generated(tmp_path):
+    make_source(tmp_path, QA_TOML + ORCH_TOML, {"qa-tester": "# QA\n", "orchestrator": ORCH_BODY})
+
+    assert build_agents.main([], root=tmp_path) == 0
+
+    manifest = json.loads((tmp_path / "plugin" / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
+    marketplace = json.loads((tmp_path / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
+    assert manifest["name"] == "se-agents"
+    assert "version" not in manifest  # a version would pin installs until someone bumps it
+    assert marketplace["name"] == "se-agents"
+    assert marketplace["plugins"] == [dict(marketplace["plugins"][0], name="se-agents", source="./plugin")]
+    assert (tmp_path / "plugin" / "commands" / "orchestrate.md").exists()
+    for name in ("retro-template.md", "doc-templates.md", "usage.py"):
+        assert (tmp_path / "plugin" / "team" / name).exists(), name
+    assert (tmp_path / "plugin" / "team" / "usage.py").read_text(encoding="utf-8") == "stub usage.py\n"
+
+    plugin_agent = (tmp_path / "plugin" / "agents" / "qa-tester.md").read_text(encoding="utf-8")
+    claude_agent = (tmp_path / ".claude" / "agents" / "qa-tester.md").read_text(encoding="utf-8")
+    assert "Part of the /se-agents:orchestrate engineering team" in plugin_agent
+    assert plugin_agent.replace("/se-agents:orchestrate", "/orchestrate") == claude_agent
+
+
+def test_check_detects_stale_plugin_files(tmp_path):
+    make_source(tmp_path, QA_TOML, {"qa-tester": "# QA\n"})
+    build_agents.main([], root=tmp_path)
+    with open(tmp_path / "plugin" / "team" / "usage.py", "a", encoding="utf-8") as f:
+        f.write("tweak\n")
+
+    assert build_agents.main(["--check"], root=tmp_path) == 1
+    build_agents.main([], root=tmp_path)
+    (tmp_path / ".claude-plugin" / "marketplace.json").unlink()
+    assert build_agents.main(["--check"], root=tmp_path) == 1
+
+
+def test_build_removes_plugin_agent_of_a_removed_role(tmp_path):
+    make_source(tmp_path, QA_TOML + ORCH_TOML, {"qa-tester": "# QA\n", "orchestrator": ORCH_BODY})
+    build_agents.main([], root=tmp_path)
+    (tmp_path / "agents" / "roles.toml").write_text(ORCH_TOML, encoding="utf-8")
+    (tmp_path / "agents" / "qa-tester.md").unlink()
+
+    assert build_agents.main([], root=tmp_path) == 0
+
+    assert not (tmp_path / "plugin" / "agents" / "qa-tester.md").exists()
+    assert build_agents.main(["--check"], root=tmp_path) == 0
+
+
+def test_missing_plugin_team_file_is_reported(tmp_path, capsys):
+    make_source(tmp_path, QA_TOML, {"qa-tester": "# QA\n"})
+    (tmp_path / "templates" / "retro.md").unlink()
+
+    assert build_agents.main([], root=tmp_path) == 2
+
+    assert "plugin team file not found: templates/retro.md" in capsys.readouterr().err
+
+
+def test_plugin_orchestrator_reads_team_files_from_the_plugin():
+    roles = list(_real_roles().values())
+    command = build_agents.build_plugin_outputs(roles, build_agents.REPO_ROOT)[build_agents.PLUGIN_COMMAND_PATH]
+
+    # A plugin install has no clone and no ~/.se-agents/ copies of the team files
+    for text in ("~/.se-agents/retro-template.md", "~/.se-agents/usage.py", "~/.se-agents/doc-templates.md",
+                 "source.json", "install_global.py"):
+        assert text not in command, text
+    assert not build_agents.PLUGIN_ORCHESTRATE.search(command)
+    assert command.count("${CLAUDE_PLUGIN_ROOT}/team/") >= 3
+    assert "se-agents:backend-developer" in command
+    assert "~/.se-agents/retros/" in command  # retros stay in the home folder so they survive plugin updates
+
+
+def test_installer_outputs_hold_no_plugin_files():
+    # The installer maps every build_outputs() path into the home folder
+    outputs = build_agents.build_outputs(list(_real_roles().values()))
+
+    for rel in outputs:
+        assert rel.parts[0] not in ("plugin", ".claude-plugin"), rel

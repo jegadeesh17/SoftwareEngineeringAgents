@@ -1,0 +1,15 @@
+{
+  "name": "se-agents",
+  "description": "An AI engineering team: /se-agents:orchestrate leads 11 specialist sub-agents through Plan, Setup and Build.",
+  "author": {
+    "name": "Jegadeesh D"
+  },
+  "homepage": "https://github.com/jegadeesh17/SoftwareEngineeringAgents",
+  "repository": "https://github.com/jegadeesh17/SoftwareEngineeringAgents",
+  "license": "MIT",
+  "keywords": [
+    "agents",
+    "orchestration",
+    "software-engineering"
+  ]
+}

@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Anti-sycophancy: never praise or blindly validate the user's architectural choices; be a candid peer engineer.
 
 ## Claude Code setup (this repo)
-- Hooks in `.claude/settings.json` block hand-edits to generated files (`.claude/agents/<role>.md`, `.agents/agents/<role>/agent.md`, `templates/claude/orchestrate.md`) and re-run `python -m engine.build_agents` after you edit `agents/`.
+- Hooks in `.claude/settings.json` block hand-edits to generated files (`.claude/agents/<role>.md`, `.agents/agents/<role>/agent.md`, `templates/claude/orchestrate.md`, everything in `plugin/`, `.claude-plugin/marketplace.json`) and re-run `python -m engine.build_agents` after you edit `agents/`.
 - Always edit the source in `agents/`, then run `python -m pytest -q` before finishing; the drift check fails on stale generated files.
 - `.env` files are protected by a global hook. Document variables in `.env.example`.
 - Commit source and generated files together, using Conventional Commits, and only when asked.

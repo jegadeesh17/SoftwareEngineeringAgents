@@ -97,6 +97,19 @@ You <──> ORCHESTRATOR (the only agent that talks to you)
 
 ## Install
 
+Pick **one** of the two ways below. They install the same team, so having both makes every Claude Code session load two copies of each agent and two orchestrate commands.
+
+### Claude Code plugin (Claude Code only, no clone)
+
+```
+/plugin marketplace add jegadeesh17/SoftwareEngineeringAgents
+/plugin install se-agents@se-agents
+```
+
+Plugin names are prefixed, so the command is `/se-agents:orchestrate` and the agents are `se-agents:<role>`. The plugin follows this repository's commits. To get a newer version, run `claude plugin marketplace update se-agents`, then `claude plugin update se-agents@se-agents`, and restart Claude Code. Python 3.11+ is still needed for the retro's token usage report.
+
+### Installer (Claude Code and Antigravity)
+
 Requirements: Python 3.11+ (for the installer only), plus Claude Code and/or the Antigravity CLI.
 
 ```bash
@@ -121,7 +134,7 @@ Options:
 
 Open an empty folder for a new project, or the folder of an existing one, then:
 
-- **Claude Code:** run `claude --model opus --effort high` and type `/orchestrate`. The command switches to Opus at high effort only for the turn you type it, so start the session on it; otherwise the orchestrator asks you to restart.
+- **Claude Code:** run `claude --model opus --effort high` and type `/orchestrate` (`/se-agents:orchestrate` with the plugin). The command switches to Opus at high effort only for the turn you type it, so start the session on it; otherwise the orchestrator asks you to restart.
 - **Antigravity:** run `agy --agent orchestrator`, or pick `orchestrator` in `/agents`.
 
 **Modes.** `principal_architect` is the default. Type `/orchestrate client_delivery` (or tell the orchestrator) for the old hands-off flow: no architecture proposal, seam lock, split breaker, entropy audit or viva. For an existing project, say "deepen" to have the architect find 3-5 shallow modules to consolidate.
@@ -148,14 +161,14 @@ Every build leaves a short retro on your machine, in `~/.se-agents/retros/<proje
 
 In Claude Code the first write outside the project asks for permission. Approve it, or add `"Edit(~/.se-agents/**)"` to `permissions.allow` in `~/.claude/settings.json`.
 
-At each milestone the orchestrator also fills the retro's `## Usage` table with measured token use per agent (runs, turns, average and peak context), read from Claude Code's own session transcripts by `~/.se-agents/usage.py`. You can run it yourself on any project: `python ~/.se-agents/usage.py <project folder>`.
+At each milestone the orchestrator also fills the retro's `## Usage` table with measured token use per agent (runs, turns, average and peak context), read from Claude Code's own session transcripts by `~/.se-agents/usage.py` (with the plugin, by its copy in the plugin's `team/` folder). You can run it yourself on any project: `python ~/.se-agents/usage.py <project folder>`.
 
-To learn from your retros, open Claude Code in your clone and run `/judge-retros`. It validates every retro in `~/.se-agents/retros/`, clusters recurring problems and cost hot spots, ranks any drop in quality after a change to the agents first, checks whether a later commit already fixed each problem, and writes `retros/REPORT.md` with concrete edits to the agents. You decide what to change.
+To learn from your retros, open Claude Code in a clone of this repository and run `/judge-retros`. It validates every retro in `~/.se-agents/retros/`, clusters recurring problems and cost hot spots, ranks any drop in quality after a change to the agents first, checks whether a later commit already fixed each problem, and writes `retros/REPORT.md` with concrete edits to the agents. You decide what to change.
 
 ## Engineering decisions
 
 - **The first version was thrown away.** It was a Python pipeline that simulated the agents. Without API keys it could not do real work, so it was removed ([`3f4f24f`](https://github.com/jegadeesh17/SoftwareEngineeringAgents/commit/3f4f24f)) in favor of each tool's native sub-agents. The design is in [docs/superpowers/specs](docs/superpowers/specs/2026-09-28-native-subagents-design.md).
-- **One source, two runtimes.** Each role is defined once in `agents/`. [`engine/build_agents.py`](engine/build_agents.py) renders it into the Claude Code and Antigravity formats, so the two cannot drift apart. `--check` fails CI if a generated file is stale, and Claude Code hooks in this repo block hand-edits to generated files.
+- **One source, two runtimes.** Each role is defined once in `agents/`. [`engine/build_agents.py`](engine/build_agents.py) renders it into the Claude Code and Antigravity formats, and into the Claude Code plugin in `plugin/`, so they cannot drift apart. `--check` fails CI if a generated file is stale, and Claude Code hooks in this repo block hand-edits to generated files.
 - **Model tiering.** Each role runs on the model Anthropic positions for its kind of work. Opus handles judgment: the orchestrator (at high effort), product analyst, architect, task planner, adversarial reviewer and security reviewer. Sonnet handles coding and visual review: the backend and frontend developers and the UI reviewer. Haiku handles read-heavy or downstream-verified work: the codebase analyst, QA tester and platform engineer. Each role's reasoning effort is pinned too. The orchestrator does the git work itself, since a sub-agent for a few git commands only adds waiting. A role's model and effort are one line each in [`agents/roles.toml`](agents/roles.toml). Antigravity agents use your session's model.
 - **Checked live, not assumed.** Antigravity enforces each agent's `tools` list. This was confirmed with CLI 1.2.12 by trying to call tools outside the list.
 - **A non-destructive installer.** It keeps a manifest of what it wrote, updates only its own files on reinstall, and never overwrites your edits without `--force`.
@@ -170,7 +183,7 @@ This is a personal project, open-sourced so you can build your own team on it. F
 1. Edit a role's metadata (description, tools, model, effort) in `agents/roles.toml`, or its prompt in `agents/<role>.md`.
 2. Regenerate: `python -m engine.build_agents`
 3. Test: `python -m pytest -q` (dev dependencies: `pip install -e ".[dev]"`)
-4. Install your version: `python scripts/install_global.py`
+4. Install your version: `python scripts/install_global.py`. To ship your fork as a plugin, change `REPOSITORY_URL`, `AUTHOR_NAME` and, if you like, `PLUGIN_NAME` in `engine/build_agents.py`, regenerate, and push; users then run `/plugin marketplace add <you>/SoftwareEngineeringAgents`.
 
 [AGENTS.md](AGENTS.md) is the full developer guide.
 
