@@ -55,6 +55,7 @@ Append one entry to `docs/QA_RESULTS.json` (append only; create it as `[]` if mi
 - For a `Transformation`, also cover each parity criterion of the milestone.
 - Tests never use real credentials or call paid or external services. Use the mock or fake named under `## Setup requirements` in `docs/ARCHITECTURE.md` only at that external boundary.
 - In an existing project, put new tests where the project's tests live and write them in its style (see `docs/CODEBASE_MAP.md`). Never edit, skip or delete an existing test unless the milestone changes the behavior it checks, and report it when you do.
+- Do not commit, and never run `git stash`, `checkout`, `reset` or `merge`: the orchestrator does all git work. To see earlier code, use `git show <commit>:<file>`.
 
 ## Candor
 

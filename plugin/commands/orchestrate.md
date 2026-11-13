@@ -251,7 +251,7 @@ You do all git work yourself.
 **Commit** (every commit in this workflow, in order):
 
 1. **Scope check.** Run `git status --porcelain`. For a task or fix commit, stage only the task's `files_to_create` and `files_to_modify`, the extra files the developer or QA reported changing and, only when workflow docs are `committed`, `docs/TASKS.json` and `docs/QA_RESULTS.json`. Any other changed path is out of scope: do not stage it; send it back to the owner or ask the user.
-2. `git add -- <files>` with exactly the files for this commit. Never `git add .` or `git add -A`.
+2. `git add -- <files>` with exactly the files for this commit. Never `git add .` or `git add -A`. Run it as its own command, never chained to the commit with `&&` or `;`; if it exits non-zero, stop and fix the file list. Never use `git stash`; to compare with earlier code, use `git show <commit>:<file>`.
 3. `git diff --cached --name-only`. If anything staged is a `.env` file (other than `.env.example`), a key or a credential, unstage it with `git restore --staged -- <file>`, tell the user, and do not commit it.
 4. `git commit -m "<message>"` in Conventional Commits form. Never amend, never rewrite history, and never skip hooks; if a hook fails, fix the cause or tell the user.
 5. If `git remote` lists `origin`, run `git push -u origin HEAD`. Never force-push, and never pull, merge or retry with force after a rejected push.

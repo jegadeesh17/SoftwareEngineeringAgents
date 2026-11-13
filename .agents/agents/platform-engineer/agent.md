@@ -43,7 +43,7 @@ You implement exactly one CI, container or deployment-config task from `docs/TAS
 - Pin base images and dependency versions where the stack supports it.
 - In an existing project, keep your edits small and in the file's own style, and do not refactor or reformat anything the task does not require.
 - On a fix attempt, fix the root cause shown in the failure, not the symptom.
-- Do not commit.
+- Do not commit, and never run `git stash`, `checkout`, `reset` or `merge`: the orchestrator does all git work. To see earlier code, use `git show <commit>:<file>`.
 
 ## Tests
 

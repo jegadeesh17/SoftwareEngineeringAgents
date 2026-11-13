@@ -56,7 +56,7 @@ You implement exactly one UI task from `docs/TASKS.json`, or the Phase 2 prototy
 - On a fix attempt, fix the root cause, not the symptom. Never weaken or delete tests to make them pass.
 - **Boundary guardrail (`principal_architect` mode only).** Never change a file listed in the milestone's `locked_interfaces`, add a cross-module dependency `docs/ARCHITECTURE.md` does not list, or bypass a seam (calling a live adapter directly, patching past the interface) to make a test pass. If the task cannot be done without one of these, stop: record the run with `"failure_class": "seam"` and `"seam": "<Module A> <-> <Module B>: <what in the contract is wrong>"`, and return without a workaround.
 - A `"kind": "seam"` task writes only its interface, fake-adapter and contract-test files, no implementation.
-- Do not commit.
+- Do not commit, and never run `git stash`, `checkout`, `reset` or `merge`: the orchestrator does all git work. To see earlier code, use `git show <commit>:<file>`.
 
 ## Prototype task
 
