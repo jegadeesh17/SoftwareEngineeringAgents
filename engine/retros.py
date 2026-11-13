@@ -1,8 +1,8 @@
 """
 Team retro format: parse, validate and privacy-scan a retro written by the orchestrator.
 
-A retro is Markdown with flat `key: value` frontmatter and three sections, ## Summary,
-## Scores and ## Log, in that order, with an optional ## Usage before ## Log (see templates/retro.md).
+A retro is Markdown with flat `key: value` frontmatter and a ## Log section (see templates/retro.md).
+Older retros also have ## Summary and ## Scores before it, with an optional ## Usage before ## Log.
 
 Usage: python -m engine.retros FILE_OR_FOLDER...
 Exits 1 if any retro has a format error or a privacy finding.
@@ -17,6 +17,8 @@ from typing import Dict, List, Optional, Set, Tuple
 SECTIONS = ["Summary", "Scores", "Log"]
 # ## Usage (measured token use per agent) is optional, before ## Log; retros written before it have none
 SECTIONS_WITH_USAGE = ["Summary", "Scores", "Usage", "Log"]
+# Retros written from the current template hold only ## Log; /judge-retros does the scoring
+SECTIONS_LOG_ONLY = ["Log"]
 YES_NO = {"yes", "no"}
 ENUMS: Dict[str, Set[str]] = {
     "retro_format": {"1"},
@@ -219,10 +221,10 @@ def validate(text: str) -> List[str]:
     front_lines, body = split
     errors = _validate_frontmatter(front_lines)
     headings = re.findall(r"^## (.+?)[ \t]*$", body, re.MULTILINE)
-    if headings not in (SECTIONS, SECTIONS_WITH_USAGE):
+    if headings not in (SECTIONS_LOG_ONLY, SECTIONS, SECTIONS_WITH_USAGE):
         expected = ", ".join(f"## {name}" for name in SECTIONS)
-        errors.append(f"sections must be {expected} in that order, with an optional ## Usage before ## Log; "
-                      f"found {', '.join(headings) or 'none'}")
+        errors.append(f"sections must be ## Log alone, or {expected} in that order with an optional ## Usage "
+                      f"before ## Log; found {', '.join(headings) or 'none'}")
     else:
         errors += _validate_tables(body)
     return errors

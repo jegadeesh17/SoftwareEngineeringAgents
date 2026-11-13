@@ -26,28 +26,8 @@ Log: one row per event, written when it happens.
   Severity:     low, medium or high; "-" for went-well
   Likely cause: a role (backend-developer) or a workflow step (Phase 2.4)
 
-Scores, at handover: one row per agent that ran, the orchestrator included. Each score is 1-5 or n/a
-and cites log rows or counts as evidence.
-  First try:    5 every task passed the first verification; 3 some tasks needed a retry; 1 a task hit the retry limit
-  Correctness:  5 no rejected review and no UAT defect traced to the agent; 3 one; 1 repeated, or a defect reached the user twice
-  Instructions: 5 no logged deviation; 3 one (wrong file, skipped step, out-of-scope change); 1 repeated
-  Hand-off:     5 no hand-off-gap caused by or blocking the agent; 3 one; 1 repeated
+Log facts only (what happened, what it cost, the likely cause). Never score agents: /judge-retros evaluates the team later.
 -->
-
-## Summary
-
-<!-- At handover: what went well, the top 3 recurring problems, and up to 5 ranked changes to the team, each naming the role or workflow step to change. -->
-
-## Scores
-
-| Agent | Correctness | Instructions | First try | Hand-off | Evidence |
-|---|---|---|---|---|---|
-
-## Usage
-
-<!-- Measured token use per agent, from Claude Code's transcripts. At each milestone self-check and at finish, run
-  python ~/.se-agents/usage.py <project folder> --since <started>
-and replace this section's content with its output; never append. Antigravity has no transcripts: leave it empty. -->
 
 ## Log
 

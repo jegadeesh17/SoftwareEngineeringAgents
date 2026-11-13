@@ -180,6 +180,13 @@ def test_cli_checks_files_and_folders(tmp_path, capsys):
     assert retros.main([]) == 2
 
 
+def test_log_only_retro_is_valid():
+    log_only = re.sub(r"## Summary.*?(?=## Log)", "", SAMPLE, flags=re.DOTALL)
+
+    assert "## Scores" not in log_only
+    assert retros.validate(log_only) == []
+
+
 def test_usage_section_is_optional_but_only_before_the_log():
     usage = "## Usage\n\n| Agent | Runs | Turns |\n|---|---|---|\n| qa-tester | 1 | 9 |\n\n"
     with_usage = SAMPLE.replace("## Log", usage + "## Log")

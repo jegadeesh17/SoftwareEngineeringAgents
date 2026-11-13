@@ -569,9 +569,9 @@ def test_orchestrator_keeps_a_team_retro_outside_the_project():
 
     for text in ("## Team retro", "~/.se-agents/retros/", "retro-template.md", "source.json",
                  ".se-agents/RETRO.md", "went-well", "user-correction",
-                 "hand-off-gap", "milestones_accepted", "milestones_planned",
-                 "~/.se-agents/usage.py", "## Usage", "/judge-retros"):
+                 "hand-off-gap", "milestones_accepted", "milestones_planned", "/judge-retros"):
         assert text in body, text
+    assert "## Scores" not in body
     assert "never reconstructed later" not in body
 
 
@@ -711,7 +711,7 @@ def test_plugin_orchestrator_reads_team_files_from_the_plugin():
                  "source.json", "install_global.py"):
         assert text not in command, text
     assert not build_agents.PLUGIN_ORCHESTRATE.search(command)
-    assert command.count("${CLAUDE_PLUGIN_ROOT}/team/") >= 3
+    assert command.count("${CLAUDE_PLUGIN_ROOT}/team/") >= 2
     assert "se-agents:backend-developer" in command
     assert "~/.se-agents/retros/" in command  # retros stay in the home folder so they survive plugin updates
 
