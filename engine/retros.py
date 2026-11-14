@@ -54,6 +54,8 @@ GENERIC_USERNAMES = {
     "gitpod", "jovyan", "vagrant", "claude", "code",
 }
 URL = re.compile(r"\b[A-Za-z][A-Za-z0-9+.-]*://[^\s)>|]+")
+# Sentence punctuation and Markdown marks right after a URL belong to the prose, not the URL
+URL_TRAILING = ".,;:!?'\"`*_"
 PATTERNS = [
     ("absolute path", re.compile(r"(?<![A-Za-z0-9])[A-Za-z]:[\\/]")),
     ("absolute path", re.compile(r"(?i)/(?:users|home|var|opt|srv|root|mnt|tmp|workspaces?)/[^/\s]+")),
@@ -240,9 +242,12 @@ def privacy_findings(text: str, usernames: List[str]) -> List[str]:
     for number, line in enumerate(normalize(text).split("\n"), start=1):
         for kind, pattern in PATTERNS:
             for match in pattern.finditer(line):
-                if kind == "url" and ALLOWED_URL.match(match.group(0)):
-                    continue
-                findings.append(f"line {number}: {kind}: {match.group(0)}")
+                found = match.group(0)
+                if kind == "url":
+                    found = found.rstrip(URL_TRAILING)
+                    if ALLOWED_URL.match(found):
+                        continue
+                findings.append(f"line {number}: {kind}: {found}")
         # URLs are reported (or allowed) above; scanning their parts again would double-report them
         without_urls = URL.sub(" ", line)
         for match in HOSTNAME.finditer(without_urls):

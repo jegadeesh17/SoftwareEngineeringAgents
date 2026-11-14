@@ -108,6 +108,31 @@ def test_this_repositorys_url_is_allowed():
     assert retros.privacy_findings("https://github.com/jegadeesh17/SoftwareEngineeringAgents/issues", []) == []
 
 
+@pytest.mark.parametrize("line", [
+    "See https://github.com/jegadeesh17/SoftwareEngineeringAgents.",
+    "See https://github.com/jegadeesh17/SoftwareEngineeringAgents, then rerun",
+    "Cloned https://github.com/jegadeesh17/SoftwareEngineeringAgents; it worked",
+    "Source: `https://github.com/jegadeesh17/SoftwareEngineeringAgents`",
+    "Is it https://github.com/jegadeesh17/SoftwareEngineeringAgents?",
+    "**https://github.com/jegadeesh17/SoftwareEngineeringAgents**",
+    "\"https://github.com/jegadeesh17/SoftwareEngineeringAgents\"",
+])
+def test_this_repositorys_url_followed_by_punctuation_is_allowed(line):
+    assert retros.privacy_findings(line, []) == []
+
+
+def test_flagged_url_is_reported_without_trailing_punctuation():
+    findings = retros.privacy_findings("Deployed to https://example.com/app.", [])
+
+    assert findings == ["line 1: url: https://example.com/app"]
+
+
+def test_lookalike_of_this_repositorys_url_followed_by_punctuation_is_flagged():
+    findings = retros.privacy_findings("See https://github.com/jegadeesh17/SoftwareEngineeringAgentsEvil.", [])
+
+    assert any(": url: " in f for f in findings), findings
+
+
 def test_real_usernames_are_flagged_as_whole_words():
     findings = retros.privacy_findings("jsmith fixed it\njsmithson did not\n", ["jsmith"])
 
