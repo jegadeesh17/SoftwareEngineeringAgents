@@ -37,7 +37,7 @@ def make_source(root, toml_text, prompts):
     for name, body in prompts.items():
         (src / f"{name}.md").write_text(body, encoding="utf-8")
     # The plugin target ships copies of the team files, so every source tree needs them
-    for source, _ in build_agents.PLUGIN_TEAM_FILES:
+    for source in [s for s, _ in build_agents.PLUGIN_TEAM_FILES] + [build_agents.PLUGIN_README_SOURCE]:
         (root / source).parent.mkdir(parents=True, exist_ok=True)
         (root / source).write_text(f"stub {source.name}\n", encoding="utf-8")
     return root
@@ -662,6 +662,7 @@ def test_plugin_and_marketplace_are_generated(tmp_path):
     for name in ("retro-template.md", "doc-templates.md", "usage.py"):
         assert (tmp_path / "plugin" / "team" / name).exists(), name
     assert (tmp_path / "plugin" / "team" / "usage.py").read_text(encoding="utf-8") == "stub usage.py\n"
+    assert (tmp_path / "plugin" / "README.md").read_text(encoding="utf-8") == "stub plugin-readme.md\n"
 
     plugin_agent = (tmp_path / "plugin" / "agents" / "qa-tester.md").read_text(encoding="utf-8")
     claude_agent = (tmp_path / ".claude" / "agents" / "qa-tester.md").read_text(encoding="utf-8")
@@ -699,7 +700,7 @@ def test_missing_plugin_team_file_is_reported(tmp_path, capsys):
 
     assert build_agents.main([], root=tmp_path) == 2
 
-    assert "plugin team file not found: templates/retro.md" in capsys.readouterr().err
+    assert "plugin file not found: templates/retro.md" in capsys.readouterr().err
 
 
 def test_plugin_orchestrator_reads_team_files_from_the_plugin():

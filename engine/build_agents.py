@@ -60,6 +60,9 @@ PLUGIN_TEAM_FILES = [
     (Path("templates") / "doc-templates.md", "doc-templates.md"),
     (Path("engine") / "usage.py", "usage.py"),
 ]
+# Anthropic's plugin directory requires a README of at least 40 words inside the plugin folder
+PLUGIN_README_SOURCE = Path("templates") / "plugin-readme.md"
+PLUGIN_README_PATH = PLUGIN_DIR / "README.md"
 # Plugin commands and agents are namespaced: /se-agents:orchestrate and se-agents:<role>
 PLUGIN_SUBAGENT_SCOPE = SUBAGENT_SCOPE.replace("/orchestrate", f"/{PLUGIN_NAME}:orchestrate")
 # Claude Code substitutes ${CLAUDE_PLUGIN_ROOT} in command bodies, so the plugin's orchestrator reads the team files
@@ -352,11 +355,13 @@ def build_plugin_outputs(roles: List[Role], root: Path) -> Dict[Path, str]:
         }],
     })
 
-    for source, name in PLUGIN_TEAM_FILES:
+    for source, target in [(s, PLUGIN_TEAM_DIR / n) for s, n in PLUGIN_TEAM_FILES] + [
+        (PLUGIN_README_SOURCE, PLUGIN_README_PATH)
+    ]:
         path = root / source
         if not path.exists():
-            raise ValueError(f"plugin team file not found: {source.as_posix()}")
-        outputs[PLUGIN_TEAM_DIR / name] = normalize_newlines(path.read_text(encoding="utf-8-sig"))
+            raise ValueError(f"plugin file not found: {source.as_posix()}")
+        outputs[target] = normalize_newlines(path.read_text(encoding="utf-8-sig"))
     return outputs
 
 
