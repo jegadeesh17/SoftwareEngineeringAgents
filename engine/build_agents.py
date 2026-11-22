@@ -47,6 +47,8 @@ SUBAGENT_SCOPE = " Part of the /orchestrate engineering team: use only when the 
 
 # Claude Code plugin target. Kept out of build_outputs(): the installer maps every key of that dict into the home folder.
 PLUGIN_NAME = "sea"
+# Shown in place of the name; also keeps the directory listing distinct from short look-alike names
+PLUGIN_DISPLAY_NAME = "SEA: Software Engineering Agents"
 MARKETPLACE_NAME = "sea"
 REPOSITORY_URL = "https://github.com/jegadeesh17/SoftwareEngineeringAgents"
 AUTHOR_NAME = "Jegadeesh D"
@@ -345,6 +347,7 @@ def build_plugin_outputs(roles: List[Role], root: Path) -> Dict[Path, Output]:
     # No "version": a version pins installs until it is bumped, so without one installs follow the git commits
     outputs[PLUGIN_MANIFEST_PATH] = _json({
         "name": PLUGIN_NAME,
+        "displayName": PLUGIN_DISPLAY_NAME,
         "description": description,
         "author": {"name": AUTHOR_NAME},
         "homepage": REPOSITORY_URL,
