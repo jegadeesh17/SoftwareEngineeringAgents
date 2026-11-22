@@ -1,4 +1,4 @@
-# SoftwareEngineeringAgents
+# SEA: Software Engineering Agents
 
 [![CI](https://github.com/jegadeesh17/SoftwareEngineeringAgents/actions/workflows/ci.yml/badge.svg)](https://github.com/jegadeesh17/SoftwareEngineeringAgents/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -17,9 +17,9 @@ New to the terms used here? See the [Glossary](#glossary).
 1. Install the team as a Claude Code plugin:
    ```
    /plugin marketplace add jegadeesh17/SoftwareEngineeringAgents
-   /plugin install se-agents@se-agents
+   /plugin install sea@sea
    ```
-2. Open an empty folder (or an existing project), run `claude --model opus --effort high`, and type `/se-agents:orchestrate`.
+2. Open an empty folder (or an existing project), run `claude --model opus --effort high`, and type `/sea:orchestrate`.
 3. Answer the orchestrator's interview. Nothing is built until you approve the scope.
 
 To use Antigravity, or to install without the plugin, see [Install](#install).
@@ -32,10 +32,10 @@ Pick **one** of the two ways below. They install the same team, so having both m
 
 ```
 /plugin marketplace add jegadeesh17/SoftwareEngineeringAgents
-/plugin install se-agents@se-agents
+/plugin install sea@sea
 ```
 
-Plugin names are prefixed, so the command is `/se-agents:orchestrate` and the agents are `se-agents:<role>`. The plugin follows this repository's commits. To get a newer version, run `claude plugin marketplace update se-agents`, then `claude plugin update se-agents@se-agents`, and restart Claude Code. Python 3.11+ is needed only if you run `/judge-retros` or the token usage report yourself.
+Plugin names are prefixed, so the command is `/sea:orchestrate` and the agents are `sea:<role>`. The plugin follows this repository's commits. To get a newer version, run `claude plugin marketplace update sea`, then `claude plugin update sea@sea`, and restart Claude Code. Python 3.11+ is needed only if you run `/judge-retros` or the token usage report yourself.
 
 ### Installer (Claude Code and Antigravity)
 
@@ -51,9 +51,9 @@ This installs:
 - `~/.claude/agents/*.md`: the 11 Claude Code sub-agents.
 - `~/.claude/commands/orchestrate.md`: the `/orchestrate` command.
 - `~/.gemini/config/agents/*/agent.md`: the orchestrator and 11 sub-agents for Antigravity.
-- `~/.se-agents/retro-template.md`, `doc-templates.md`, `usage.py` and `source.json`: the retro format, the document templates the orchestrator reads on demand, the token usage report, and which version of the team you installed.
+- `~/.sea/retro-template.md`, `doc-templates.md`, `usage.py` and `source.json`: the retro format, the document templates the orchestrator reads on demand, the token usage report, and which version of the team you installed.
 
-The installer records what it wrote in `~/.se-agents/installed.json`. Re-running it after `git pull` updates files it installed before and keeps any you've edited. It exits with an error if it had to skip a file.
+The installer records what it wrote in `~/.sea/installed.json`. Re-running it after `git pull` updates files it installed before and keeps any you've edited. It exits with an error if it had to skip a file.
 
 Options:
 - `--force` overwrites files you've customized. Without it they are kept.
@@ -63,7 +63,7 @@ Options:
 
 Open an empty folder for a new project, or the folder of an existing one, then:
 
-- **Claude Code:** run `claude --model opus --effort high` and type `/orchestrate` (`/se-agents:orchestrate` with the plugin). The command switches to Opus at high effort only for the turn you type it, so start the session on it; otherwise the orchestrator asks you to restart.
+- **Claude Code:** run `claude --model opus --effort high` and type `/orchestrate` (`/sea:orchestrate` with the plugin). The command switches to Opus at high effort only for the turn you type it, so start the session on it; otherwise the orchestrator asks you to restart.
 - **Antigravity:** run `agy --agent orchestrator`, or pick `orchestrator` in `/agents`.
 
 **Modes.** `principal_architect` is the default. Type `/orchestrate client_delivery` (or tell the orchestrator) for the old hands-off flow: no architecture proposal, seam lock, split breaker, entropy audit or viva. For an existing project, say "deepen" to have the architect find 3-5 shallow modules to consolidate.
@@ -183,7 +183,7 @@ AI coding agents tend to fail in predictable ways. Each one has a specific guard
 | Generic, "AI-looking" UI | **Built-in design standard.** The frontend developer and UI reviewer carry their own UI craft rules and a refuse list of AI-looking patterns, and preload the [Impeccable](https://impeccable.style) skill on top when it is installed. Screenshots are reviewed at desktop and mobile widths. |
 | Breaks code it didn't write | **Existing-project mode.** A codebase analyst maps the stack, conventions and a baseline test run first. Work happens on its own branch, and the reviewer checks for regressions against the starting commit. |
 | Multi-agent runs burn through tokens | **Lean by design.** Agents read only the doc sections their task names, keep command output short, and the per-task loop uses one agent instead of two. Small changes skip the planning pipeline (never the tests, reviews or your sign-off), and the orchestrator suggests a fresh session every few tasks. |
-| The team never learns from its mistakes | **Self-retro.** Each build leaves a retro in `~/.se-agents/retros/`, outside the project's git: what went well and every mistake, bug and failure, logged as facts only. `/judge-retros` scores each agent from those logs and the project's test and review records, measures token use per agent, turns your retros into ranked fixes to the team, and flags any drop in quality. |
+| The team never learns from its mistakes | **Self-retro.** Each build leaves a retro in `~/.sea/retros/`, outside the project's git: what went well and every mistake, bug and failure, logged as facts only. `/judge-retros` scores each agent from those logs and the project's test and review records, measures token use per agent, turns your retros into ranked fixes to the team, and flags any drop in quality. |
 
 ## Glossary
 
@@ -204,13 +204,13 @@ AI coding agents tend to fail in predictable ways. Each one has a specific guard
 
 ## Retros: help the team improve
 
-Every build leaves a short retro on your machine, in `~/.se-agents/retros/<project>-<date>.md`, outside the project and its git. The orchestrator logs what went well and every mistake, bug and failure as it happens, as facts only; it does not score the agents. The retro describes the team's behavior, never your product: no names, code, paths or secrets.
+Every build leaves a short retro on your machine, in `~/.sea/retros/<project>-<date>.md`, outside the project and its git. The orchestrator logs what went well and every mistake, bug and failure as it happens, as facts only; it does not score the agents. The retro describes the team's behavior, never your product: no names, code, paths or secrets.
 
-In Claude Code the first write outside the project asks for permission. Approve it, or add `"Edit(~/.se-agents/**)"` to `permissions.allow` in `~/.claude/settings.json`.
+In Claude Code the first write outside the project asks for permission. Approve it, or add `"Edit(~/.sea/**)"` to `permissions.allow` in `~/.claude/settings.json`.
 
-Token use per agent (runs, turns, average and peak context) is measured from Claude Code's own session transcripts by `usage.py` (`engine/usage.py` in this repository, installed as `~/.se-agents/usage.py`, and copied into the plugin's `team/` folder). `/judge-retros` runs it to fill in usage for each retro. You can run it yourself on any project: `python ~/.se-agents/usage.py <project folder>`.
+Token use per agent (runs, turns, average and peak context) is measured from Claude Code's own session transcripts by `usage.py` (`engine/usage.py` in this repository, installed as `~/.sea/usage.py`, and copied into the plugin's `team/` folder). `/judge-retros` runs it to fill in usage for each retro. You can run it yourself on any project: `python ~/.sea/usage.py <project folder>`.
 
-To learn from your retros, open Claude Code in a clone of this repository and run `/judge-retros`. It validates every retro in `~/.se-agents/retros/`, scores each agent itself from the logs and the project's `docs/QA_RESULTS.json` and review verdicts, clusters recurring problems and cost hot spots, ranks any drop in quality after a change to the agents first, checks whether a later commit already fixed each problem, and writes `retros/REPORT.md` with concrete edits to the agents. You decide what to change.
+To learn from your retros, open Claude Code in a clone of this repository and run `/judge-retros`. It validates every retro in `~/.sea/retros/`, scores each agent itself from the logs and the project's `docs/QA_RESULTS.json` and review verdicts, clusters recurring problems and cost hot spots, ranks any drop in quality after a change to the agents first, checks whether a later commit already fixed each problem, and writes `retros/REPORT.md` with concrete edits to the agents. You decide what to change.
 
 ## Contributing
 

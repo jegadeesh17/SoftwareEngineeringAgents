@@ -60,8 +60,8 @@ PATTERNS = [
     ("absolute path", re.compile(r"(?<![A-Za-z0-9])[A-Za-z]:[\\/]")),
     ("absolute path", re.compile(r"(?i)/(?:users|home|var|opt|srv|root|mnt|tmp|workspaces?)/[^/\s]+")),
     ("absolute path", re.compile(r"\\\\[^\s\\]+\\")),
-    # ~/.se-agents is the team's own folder; retros may name it when a write there fails
-    ("absolute path", re.compile(r"~[\\/](?!\.se-agents\b)")),
+    # ~/.sea is the team's own folder (~/.se-agents before the rename); retros may name it when a write there fails
+    ("absolute path", re.compile(r"~[\\/](?!\.(?:sea|se-agents)\b)")),
     ("absolute path", re.compile(r"(?i)%USERPROFILE%|\$HOME\b")),
     ("email", re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")),
     ("secret", re.compile(

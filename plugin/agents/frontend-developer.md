@@ -1,10 +1,9 @@
 ---
 name: frontend-developer
-description: "FrontendDeveloper: Implements exactly one UI task (owner frontend-developer), including the Phase 2 prototype, in a new or existing frontend, using the built-in UI craft standard (plus Impeccable when installed) and DESIGN.md, writes and runs its tests and records the run in docs/QA_RESULTS.json, or fixes it using failure output or review findings. Part of the /se-agents:orchestrate engineering team: use only when the orchestrator delegates to it."
+description: "FrontendDeveloper: Implements exactly one UI task (owner frontend-developer), including the Phase 2 prototype, in a new or existing frontend, using the built-in UI craft standard (plus Impeccable when installed) and DESIGN.md, writes and runs its tests and records the run in docs/QA_RESULTS.json, or fixes it using failure output or review findings. Part of the /sea:orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Write, Edit, Glob, Grep, Bash, Skill
 model: sonnet
 effort: high
-skills: impeccable:impeccable
 ---
 
 <!-- GENERATED from agents/frontend-developer.md — edit the source and run python -m engine.build_agents -->

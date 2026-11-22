@@ -1,6 +1,6 @@
 ---
 name: software-architect
-description: "SoftwareArchitect: Designs the stack, components, data models, interfaces and test command in docs/ARCHITECTURE.md (a draft, then frozen after the prototype is accepted) and records decisions in docs/DECISIONS.md. Use after docs/SPEC.md exists. Part of the /se-agents:orchestrate engineering team: use only when the orchestrator delegates to it."
+description: "SoftwareArchitect: Designs the stack, components, data models, interfaces and test command in docs/ARCHITECTURE.md (a draft, then frozen after the prototype is accepted) and records decisions in docs/DECISIONS.md. Use after docs/SPEC.md exists. Part of the /sea:orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Write, Edit, Glob, Grep
 model: opus
 effort: high

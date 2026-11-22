@@ -5,3 +5,5 @@ agents/** text eol=lf
 templates/claude/*.md text eol=lf
 plugin/** text eol=lf
 .claude-plugin/*.json text eol=lf
+# Images are binary; this must come after plugin/** so it wins for the plugin icon
+*.png binary

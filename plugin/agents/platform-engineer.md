@@ -1,6 +1,6 @@
 ---
 name: platform-engineer
-description: "PlatformEngineer: Implements exactly one CI, container or deployment-config task (owner platform-engineer) from docs/TASKS.json, runs its checks and records the run in docs/QA_RESULTS.json, and writes the deploy runbook in docs/DEPLOYMENT.md. Never deploys. Part of the /se-agents:orchestrate engineering team: use only when the orchestrator delegates to it."
+description: "PlatformEngineer: Implements exactly one CI, container or deployment-config task (owner platform-engineer) from docs/TASKS.json, runs its checks and records the run in docs/QA_RESULTS.json, and writes the deploy runbook in docs/DEPLOYMENT.md. Never deploys. Part of the /sea:orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Write, Edit, Glob, Grep, Bash
 model: haiku
 effort: high

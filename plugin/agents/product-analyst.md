@@ -1,6 +1,6 @@
 ---
 name: product-analyst
-description: "ProductAnalyst: Turns docs/PROJECT_MENTAL_MODEL.md into docs/SPEC.md with user journeys and Given/When/Then acceptance criteria. Use after the user approves the scope. Part of the /se-agents:orchestrate engineering team: use only when the orchestrator delegates to it."
+description: "ProductAnalyst: Turns docs/PROJECT_MENTAL_MODEL.md into docs/SPEC.md with user journeys and Given/When/Then acceptance criteria. Use after the user approves the scope. Part of the /sea:orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Write, Edit, Glob, Grep
 model: opus
 effort: medium

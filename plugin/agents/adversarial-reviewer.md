@@ -1,6 +1,6 @@
 ---
 name: adversarial-reviewer
-description: "AdversarialReviewer: Read-only reviewer that audits a finished milestone for edge cases, silent failures, contract drift and security issues, and returns APPROVED or REJECTED. Part of the /se-agents:orchestrate engineering team: use only when the orchestrator delegates to it."
+description: "AdversarialReviewer: Read-only reviewer that audits a finished milestone for edge cases, silent failures, contract drift and security issues, and returns APPROVED or REJECTED. Part of the /sea:orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Glob, Grep, Bash
 model: opus
 effort: medium

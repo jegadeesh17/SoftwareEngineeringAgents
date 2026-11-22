@@ -200,16 +200,54 @@ def test_installer_notes_installed_roles_that_were_removed_from_the_team(tmp_pat
 def test_installer_installs_team_files_and_source_info(tmp_path, installer):
     assert installer.main([], home=tmp_path) == 0
 
-    assert _text(tmp_path / ".se-agents" / "retro-template.md") == _text(ROOT / "templates" / "retro.md")
-    assert _text(tmp_path / ".se-agents" / "doc-templates.md") == _text(ROOT / "templates" / "doc-templates.md")
-    assert _text(tmp_path / ".se-agents" / "usage.py") == _text(ROOT / "engine" / "usage.py")
-    info = json.loads(_text(tmp_path / ".se-agents" / "source.json"))
+    assert _text(tmp_path / ".sea" / "retro-template.md") == _text(ROOT / "templates" / "retro.md")
+    assert _text(tmp_path / ".sea" / "doc-templates.md") == _text(ROOT / "templates" / "doc-templates.md")
+    assert _text(tmp_path / ".sea" / "usage.py") == _text(ROOT / "engine" / "usage.py")
+    info = json.loads(_text(tmp_path / ".sea" / "source.json"))
     assert Path(info["repo"]) == ROOT.resolve()
     assert re.fullmatch(r"[0-9a-f]{7}|unknown", info["commit"])
-    manifest = json.loads(_text(tmp_path / ".se-agents" / "installed.json"))
-    for key in (".se-agents/retro-template.md", ".se-agents/doc-templates.md", ".se-agents/usage.py"):
+    manifest = json.loads(_text(tmp_path / ".sea" / "installed.json"))
+    for key in (".sea/retro-template.md", ".sea/doc-templates.md", ".sea/usage.py"):
         assert key in manifest, key
     assert all(isinstance(value, str) for value in manifest.values())
+
+
+def _as_pre_rename_install(home):
+    """Turn a fresh install into what an installer from before the SEA rename left behind."""
+    (home / ".sea").rename(home / ".se-agents")
+    manifest_path = home / ".se-agents" / "installed.json"
+    manifest = json.loads(_text(manifest_path))
+    manifest = {key.replace(".sea/", ".se-agents/", 1): value for key, value in manifest.items()}
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    (home / ".se-agents" / "retros").mkdir()
+    (home / ".se-agents" / "retros" / "shop-2026-11-01.md").write_text("old retro\n", encoding="utf-8")
+
+
+def test_installer_renames_the_old_team_folder_with_its_retros(tmp_path, installer, capsys):
+    assert installer.main([], home=tmp_path) == 0
+    _as_pre_rename_install(tmp_path)
+    capsys.readouterr()
+
+    # Rerun skips nothing: the install record follows the folder, so the files still count as ours
+    assert installer.main([], home=tmp_path) == 0
+
+    assert not (tmp_path / ".se-agents").exists()
+    assert _text(tmp_path / ".sea" / "retros" / "shop-2026-11-01.md") == "old retro\n"
+    manifest = json.loads(_text(tmp_path / ".sea" / "installed.json"))
+    assert ".sea/retro-template.md" in manifest
+    assert not any(key.startswith(".se-agents/") for key in manifest)
+    assert "Renamed" in capsys.readouterr().out
+
+
+def test_installer_leaves_both_team_folders_when_both_exist(tmp_path, installer, capsys):
+    assert installer.main([], home=tmp_path) == 0
+    (tmp_path / ".se-agents").mkdir()
+    (tmp_path / ".se-agents" / "keep.md").write_text("mine\n", encoding="utf-8")
+
+    installer.main([], home=tmp_path)
+
+    assert _text(tmp_path / ".se-agents" / "keep.md") == "mine\n"
+    assert "Both" in capsys.readouterr().out
 
 
 def test_installer_rerun_does_not_report_the_retro_template_as_removed(tmp_path, installer, capsys):
@@ -222,7 +260,7 @@ def test_installer_rerun_does_not_report_the_retro_template_as_removed(tmp_path,
 
 def test_installer_keeps_an_edited_retro_template(tmp_path, installer):
     installer.main([], home=tmp_path)
-    template = tmp_path / ".se-agents" / "retro-template.md"
+    template = tmp_path / ".sea" / "retro-template.md"
     template.write_text("my own retro format\n", encoding="utf-8")
 
     assert installer.main([], home=tmp_path) == 1

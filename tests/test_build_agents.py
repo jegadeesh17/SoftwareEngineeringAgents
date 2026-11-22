@@ -30,6 +30,9 @@ QA_BANNER = (
 )
 
 
+ICON_STUB = b"\x89PNG\r\n\x1a\n\x00\xff stub icon\r\n"
+
+
 def make_source(root, toml_text, prompts):
     src = root / "agents"
     src.mkdir()
@@ -40,6 +43,8 @@ def make_source(root, toml_text, prompts):
     for source in [s for s, _ in build_agents.PLUGIN_TEAM_FILES] + [build_agents.PLUGIN_README_SOURCE]:
         (root / source).parent.mkdir(parents=True, exist_ok=True)
         (root / source).write_text(f"stub {source.name}\n", encoding="utf-8")
+    # Not valid UTF-8, so the icon must be copied as bytes
+    (root / build_agents.PLUGIN_ICON_SOURCE).write_bytes(ICON_STUB)
     return root
 
 
@@ -567,8 +572,8 @@ def test_ui_roles_carry_the_craft_standard_and_preload_impeccable():
 def test_orchestrator_keeps_a_team_retro_outside_the_project():
     body = _real_roles()["orchestrator"].body
 
-    for text in ("## Team retro", "~/.se-agents/retros/", "retro-template.md", "source.json",
-                 ".se-agents/RETRO.md", "went-well", "user-correction",
+    for text in ("## Team retro", "~/.sea/retros/", "retro-template.md", "source.json",
+                 ".sea/RETRO.md", "went-well", "user-correction",
                  "hand-off-gap", "milestones_accepted", "milestones_planned", "/judge-retros"):
         assert text in body, text
     assert "## Scores" not in body
@@ -579,7 +584,7 @@ def test_orchestrator_starts_a_retro_for_projects_begun_before_retros():
     body = _real_roles()["orchestrator"].body
 
     assert "if none is recorded" in body
-    assert "`.se-agents/RETRO.md`, which is gitignored" in body
+    assert "`.sea/RETRO.md`, which is gitignored" in body
 
 
 def test_every_sub_agent_carries_token_discipline():
@@ -654,32 +659,40 @@ def test_plugin_and_marketplace_are_generated(tmp_path):
 
     manifest = json.loads((tmp_path / "plugin" / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
     marketplace = json.loads((tmp_path / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
-    assert manifest["name"] == "se-agents"
+    assert manifest["name"] == "sea"
     assert "version" not in manifest  # a version would pin installs until someone bumps it
-    assert marketplace["name"] == "se-agents"
-    assert marketplace["plugins"] == [dict(marketplace["plugins"][0], name="se-agents", source="./plugin")]
+    assert marketplace["name"] == "sea"
+    assert marketplace["plugins"] == [dict(marketplace["plugins"][0], name="sea", source="./plugin")]
     assert (tmp_path / "plugin" / "commands" / "orchestrate.md").exists()
-    for name in ("retro-template.md", "doc-templates.md", "usage.py"):
+    for name in ("retro-template.md", "doc-templates.md"):
         assert (tmp_path / "plugin" / "team" / name).exists(), name
-    assert (tmp_path / "plugin" / "team" / "usage.py").read_text(encoding="utf-8") == "stub usage.py\n"
+    assert (tmp_path / "plugin" / "team" / "retro-template.md").read_text(encoding="utf-8") == "stub retro.md\n"
+    # Anthropic's directory accepts scripts only from Verified organizations
+    assert not list((tmp_path / "plugin").rglob("*.py"))
     assert (tmp_path / "plugin" / "README.md").read_text(encoding="utf-8") == "stub plugin-readme.md\n"
+    assert (tmp_path / "plugin" / ".claude-plugin" / "icon.png").read_bytes() == ICON_STUB
 
     plugin_agent = (tmp_path / "plugin" / "agents" / "qa-tester.md").read_text(encoding="utf-8")
     claude_agent = (tmp_path / ".claude" / "agents" / "qa-tester.md").read_text(encoding="utf-8")
-    assert "Part of the /se-agents:orchestrate engineering team" in plugin_agent
-    assert plugin_agent.replace("/se-agents:orchestrate", "/orchestrate") == claude_agent
+    assert "Part of the /sea:orchestrate engineering team" in plugin_agent
+    assert plugin_agent.replace("/sea:orchestrate", "/orchestrate") == claude_agent
 
 
 def test_check_detects_stale_plugin_files(tmp_path):
     make_source(tmp_path, QA_TOML, {"qa-tester": "# QA\n"})
     build_agents.main([], root=tmp_path)
-    with open(tmp_path / "plugin" / "team" / "usage.py", "a", encoding="utf-8") as f:
+    with open(tmp_path / "plugin" / "team" / "retro-template.md", "a", encoding="utf-8") as f:
         f.write("tweak\n")
 
     assert build_agents.main(["--check"], root=tmp_path) == 1
     build_agents.main([], root=tmp_path)
     (tmp_path / ".claude-plugin" / "marketplace.json").unlink()
     assert build_agents.main(["--check"], root=tmp_path) == 1
+    build_agents.main([], root=tmp_path)
+    (tmp_path / "plugin" / ".claude-plugin" / "icon.png").write_bytes(ICON_STUB + b"x")
+    assert build_agents.main(["--check"], root=tmp_path) == 1
+    build_agents.main([], root=tmp_path)
+    assert build_agents.main(["--check"], root=tmp_path) == 0
 
 
 def test_build_removes_plugin_agent_of_a_removed_role(tmp_path):
@@ -707,14 +720,27 @@ def test_plugin_orchestrator_reads_team_files_from_the_plugin():
     roles = list(_real_roles().values())
     command = build_agents.build_plugin_outputs(roles, build_agents.REPO_ROOT)[build_agents.PLUGIN_COMMAND_PATH]
 
-    # A plugin install has no clone and no ~/.se-agents/ copies of the team files
-    for text in ("~/.se-agents/retro-template.md", "~/.se-agents/usage.py", "~/.se-agents/doc-templates.md",
+    # A plugin install has no clone and no ~/.sea/ copies of the team files
+    for text in ("~/.sea/retro-template.md", "~/.sea/usage.py", "~/.sea/doc-templates.md",
                  "source.json", "install_global.py"):
         assert text not in command, text
     assert not build_agents.PLUGIN_ORCHESTRATE.search(command)
     assert command.count("${CLAUDE_PLUGIN_ROOT}/team/") >= 2
-    assert "se-agents:backend-developer" in command
-    assert "~/.se-agents/retros/" in command  # retros stay in the home folder so they survive plugin updates
+    assert "sea:backend-developer" in command
+    assert "~/.sea/retros/" in command  # retros stay in the home folder so they survive plugin updates
+
+
+def test_plugin_agents_do_not_preload_skills():
+    # Anthropic's directory accepts the skills: frontmatter key only from Verified organizations
+    roles = list(_real_roles().values())
+    plugin = build_agents.build_plugin_outputs(roles, build_agents.REPO_ROOT)
+    claude = build_agents.build_outputs(roles)
+    with_skills = [r for r in roles if r.claude_skills and not r.main_agent]
+
+    assert with_skills
+    for role in with_skills:
+        assert "\nskills: " in claude[build_agents.CLAUDE_AGENTS_DIR / f"{role.name}.md"], role.name
+        assert "\nskills: " not in plugin[build_agents.PLUGIN_AGENTS_DIR / f"{role.name}.md"], role.name
 
 
 def test_installer_outputs_hold_no_plugin_files():

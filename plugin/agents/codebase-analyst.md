@@ -1,6 +1,6 @@
 ---
 name: codebase-analyst
-description: "CodebaseAnalyst: Maps an existing project into docs/CODEBASE_MAP.md (stack, layout, conventions, UI inventory, test commands, baseline test result, existing behavior). Use before planning when the workspace already contains code. Part of the /se-agents:orchestrate engineering team: use only when the orchestrator delegates to it."
+description: "CodebaseAnalyst: Maps an existing project into docs/CODEBASE_MAP.md (stack, layout, conventions, UI inventory, test commands, baseline test result, existing behavior). Use before planning when the workspace already contains code. Part of the /sea:orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Write, Edit, Glob, Grep, Bash
 model: haiku
 effort: high

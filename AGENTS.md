@@ -1,4 +1,4 @@
-# SoftwareEngineeringAgents: Developer Guide
+# SEA (Software Engineering Agents): Developer Guide
 
 This repository **defines** an AI engineering team. It is not where the team builds projects: users install the team and run it inside their own project folders.
 
@@ -9,15 +9,15 @@ This repository **defines** an AI engineering team. It is not where the team bui
 | `agents/roles.toml`, `agents/*.md` | **Source of truth.** Role metadata and one prompt per role. Edit here. |
 | `agents/shared/` | Prompt fragments inlined into roles with `<!-- INCLUDE name -->` (for example the UI craft standard). Source; edit here. |
 | `.claude/agents/`, `.agents/agents/`, `templates/claude/orchestrate.md` | **Generated.** Never edit by hand. |
-| `plugin/`, `.claude-plugin/marketplace.json` | **Generated.** The Claude Code plugin `se-agents` and the marketplace that lists it. The plugin's agents and `/se-agents:orchestrate` carry the plugin prefix, and `plugin/team/` holds copies of the retro template, the document templates and `usage.py`, which the plugin's orchestrator reads through `${CLAUDE_PLUGIN_ROOT}`. `plugin/README.md` is copied from `templates/plugin-readme.md` (source), because Anthropic's plugin directory requires a README inside the plugin folder. Check with `claude plugin validate ./plugin`. |
+| `plugin/`, `.claude-plugin/marketplace.json` | **Generated.** The Claude Code plugin `sea` and the marketplace that lists it. The plugin's agents and `/sea:orchestrate` carry the plugin prefix, and `plugin/team/` holds copies of the retro template and the document templates, which the plugin's orchestrator reads through `${CLAUDE_PLUGIN_ROOT}`. `plugin/README.md` is copied from `templates/plugin-readme.md` (source), because Anthropic's plugin directory requires a README inside the plugin folder, and `plugin/.claude-plugin/icon.png` from `templates/plugin-icon.png` (the listing icon). Check with `claude plugin validate ./plugin`. |
 | `engine/build_agents.py` | Generator: renders `agents/` into each tool's format. |
 | `scripts/install_global.py` | Installer: copies generated files into `~/.claude/` and `~/.gemini/config/`. |
-| `templates/retro.md` | Retro template (source). The installer copies it to `~/.se-agents/retro-template.md`. |
-| `templates/doc-templates.md` | Document templates the orchestrator reads on demand (source). The installer copies it to `~/.se-agents/doc-templates.md`. |
-| `engine/usage.py` | Token usage per agent from Claude Code transcripts, for the retro's `## Usage` table. Standard library only; the installer copies it to `~/.se-agents/usage.py`. CLI: `python -m engine.usage PROJECT_DIR [--since YYYY-MM-DD]` |
+| `templates/retro.md` | Retro template (source). The installer copies it to `~/.sea/retro-template.md`. |
+| `templates/doc-templates.md` | Document templates the orchestrator reads on demand (source). The installer copies it to `~/.sea/doc-templates.md`. |
+| `engine/usage.py` | Token usage per agent from Claude Code transcripts, for the retro's `## Usage` table. Standard library only; the installer copies it to `~/.sea/usage.py`. CLI: `python -m engine.usage PROJECT_DIR [--since YYYY-MM-DD]` |
 | `engine/retros.py` | Retro format: parse, validate and privacy scan. CLI: `python -m engine.retros FILE_OR_FOLDER...` |
 | `retros/` | The judge's `REPORT.md`. |
-| `.claude/commands/judge-retros.md` | Maintainer command `/judge-retros`: judges the retros in `~/.se-agents/retros/` (quality, cost and regressions) and writes `retros/REPORT.md`. Not installed for users. |
+| `.claude/commands/judge-retros.md` | Maintainer command `/judge-retros`: judges the retros in `~/.sea/retros/` (quality, cost and regressions) and writes `retros/REPORT.md`. Not installed for users. |
 | `.agents/rules/nomenclature-standards.md` | Optional global naming rule (installed with `--global-rules`). |
 | `docs/superpowers/` | Design specs and implementation plans. |
 
@@ -36,7 +36,7 @@ Other commands:
 - Single test: `python -m pytest tests/test_build_agents.py::test_name -q`
 - Check for stale generated files without writing: `python -m engine.build_agents --check` (exit 1 if stale)
 - Install into your home directory: `python scripts/install_global.py` (`--force`, `--global-rules`)
-- Check retros for format and privacy problems: `python -m engine.retros ~/.se-agents/retros`
+- Check retros for format and privacy problems: `python -m engine.retros ~/.sea/retros`
 
 ## Tool names
 

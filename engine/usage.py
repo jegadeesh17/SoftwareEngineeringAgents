@@ -6,7 +6,7 @@ sub-agent run as <session>/subagents/agent-*.jsonl with its type in the sibling 
 This prints a Markdown table the orchestrator pastes into the team retro's ## Usage section.
 
 Usage: python -m engine.usage PROJECT_DIR [--since YYYY-MM-DD] [--claude-home DIR]
-The installer also copies this file to ~/.se-agents/usage.py, so it must stay standard-library only.
+The installer also copies this file to ~/.sea/usage.py, so it must stay standard-library only.
 """
 
 import argparse

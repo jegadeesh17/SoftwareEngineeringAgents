@@ -1,16 +1,16 @@
 {
-  "name": "se-agents",
+  "name": "sea",
   "owner": {
     "name": "Jegadeesh D"
   },
   "metadata": {
-    "description": "An AI engineering team: /se-agents:orchestrate leads 11 specialist sub-agents through Plan, Setup and Build."
+    "description": "SEA (Software Engineering Agents), an AI engineering team: /sea:orchestrate leads 11 specialist sub-agents through Plan, Setup and Build."
   },
   "plugins": [
     {
-      "name": "se-agents",
+      "name": "sea",
       "source": "./plugin",
-      "description": "An AI engineering team: /se-agents:orchestrate leads 11 specialist sub-agents through Plan, Setup and Build.",
+      "description": "SEA (Software Engineering Agents), an AI engineering team: /sea:orchestrate leads 11 specialist sub-agents through Plan, Setup and Build.",
       "category": "development",
       "homepage": "https://github.com/jegadeesh17/SoftwareEngineeringAgents"
     }

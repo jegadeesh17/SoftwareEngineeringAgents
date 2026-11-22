@@ -13,7 +13,10 @@ import sys
 import tomllib
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
+
+# A generated file's content: text for prompts and manifests, bytes for images
+Output = Union[str, bytes]
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SOURCE_DIR = Path("agents")
@@ -43,8 +46,8 @@ ROLE_NAME = re.compile(r"[a-z][a-z0-9-]*")
 SUBAGENT_SCOPE = " Part of the /orchestrate engineering team: use only when the orchestrator delegates to it."
 
 # Claude Code plugin target. Kept out of build_outputs(): the installer maps every key of that dict into the home folder.
-PLUGIN_NAME = "se-agents"
-MARKETPLACE_NAME = "se-agents"
+PLUGIN_NAME = "sea"
+MARKETPLACE_NAME = "sea"
 REPOSITORY_URL = "https://github.com/jegadeesh17/SoftwareEngineeringAgents"
 AUTHOR_NAME = "Jegadeesh D"
 PLUGIN_DIR = Path("plugin")
@@ -53,33 +56,36 @@ MARKETPLACE_PATH = Path(".claude-plugin") / "marketplace.json"
 PLUGIN_AGENTS_DIR = PLUGIN_DIR / "agents"
 PLUGIN_COMMAND_PATH = PLUGIN_DIR / "commands" / "orchestrate.md"
 PLUGIN_TEAM_DIR = PLUGIN_DIR / "team"
-# The files the installer copies to ~/.se-agents/ (TEAM_FILES in scripts/install_global.py); the plugin ships them
-# inside itself instead, because files outside the plugin directory are not copied into the plugin cache
+# The files the installer copies to ~/.sea/ (TEAM_FILES in scripts/install_global.py); the plugin ships them
+# inside itself instead, because files outside the plugin directory are not copied into the plugin cache.
+# Not usage.py: the orchestrator no longer runs it, and Anthropic's directory accepts scripts only from Verified
+# organizations.
 PLUGIN_TEAM_FILES = [
     (Path("templates") / "retro.md", "retro-template.md"),
     (Path("templates") / "doc-templates.md", "doc-templates.md"),
-    (Path("engine") / "usage.py", "usage.py"),
 ]
 # Anthropic's plugin directory requires a README of at least 40 words inside the plugin folder
 PLUGIN_README_SOURCE = Path("templates") / "plugin-readme.md"
 PLUGIN_README_PATH = PLUGIN_DIR / "README.md"
-# Plugin commands and agents are namespaced: /se-agents:orchestrate and se-agents:<role>
+# The directory takes the listing icon from this path once, the first time the plugin is saved or submitted
+PLUGIN_ICON_SOURCE = Path("templates") / "plugin-icon.png"
+PLUGIN_ICON_PATH = PLUGIN_DIR / ".claude-plugin" / "icon.png"
+# Plugin commands and agents are namespaced: /sea:orchestrate and sea:<role>
 PLUGIN_SUBAGENT_SCOPE = SUBAGENT_SCOPE.replace("/orchestrate", f"/{PLUGIN_NAME}:orchestrate")
 # Claude Code substitutes ${CLAUDE_PLUGIN_ROOT} in command bodies, so the plugin's orchestrator reads the team files
-# where the plugin is installed. A plugin install has no clone and no ~/.se-agents/source.json.
+# where the plugin is installed. A plugin install has no clone and no ~/.sea/source.json.
 PLUGIN_COMMAND_REWRITES: List[Tuple[str, str]] = [
-    ("Read `~/.se-agents/source.json` (`repo`, `commit`) and copy `~/.se-agents/retro-template.md` to",
+    ("Read `~/.sea/source.json` (`repo`, `commit`) and copy `~/.sea/retro-template.md` to",
      "Copy `${CLAUDE_PLUGIN_ROOT}/team/retro-template.md` to"),
     ("(`sea_commit` from `commit`, or `unknown` without `source.json`;",
      "(`sea_commit`: `plugin-` followed by the last folder name of `${CLAUDE_PLUGIN_ROOT}`;"),
     ("If the template is missing, ask the user to run `python scripts/install_global.py` in their SoftwareEngineeringAgents folder;",
      f"If the template is missing, ask the user to reinstall the plugin with `/plugin install {PLUGIN_NAME}@{MARKETPLACE_NAME}`;"),
-    ("`python ~/.se-agents/usage.py ", "`python \"${CLAUDE_PLUGIN_ROOT}/team/usage.py\" "),
     ("in their SoftwareEngineeringAgents folder (`repo` in `source.json`)", f"in a clone of {REPOSITORY_URL}"),
-    ("with the link from `git -C <repo from ~/.se-agents/source.json> remote get-url origin` written as a browser URL "
+    ("with the link from `git -C <repo from ~/.sea/source.json> remote get-url origin` written as a browser URL "
      "(no trailing `.git`), or without a link if that fails.",
      f"with the link {REPOSITORY_URL}."),
-    ("`~/.se-agents/doc-templates.md` (or `<repo>/templates/doc-templates.md`, with `repo` from `~/.se-agents/source.json`)",
+    ("`~/.sea/doc-templates.md` (or `<repo>/templates/doc-templates.md`, with `repo` from `~/.sea/source.json`)",
      "`${CLAUDE_PLUGIN_ROOT}/team/doc-templates.md`"),
     ("If neither exists, ask the user to run `python scripts/install_global.py` in their SoftwareEngineeringAgents folder.",
      f"If it is missing, ask the user to reinstall the plugin with `/plugin install {PLUGIN_NAME}@{MARKETPLACE_NAME}`."),
@@ -247,7 +253,7 @@ def _description(role: Role, scope: str = SUBAGENT_SCOPE) -> str:
     return text if role.main_agent else text + scope
 
 
-def render_claude_agent(role: Role, scope: str = SUBAGENT_SCOPE) -> str:
+def render_claude_agent(role: Role, scope: str = SUBAGENT_SCOPE, preload_skills: bool = True) -> str:
     return (
         "---\n"
         f"name: {role.name}\n"
@@ -255,7 +261,7 @@ def render_claude_agent(role: Role, scope: str = SUBAGENT_SCOPE) -> str:
         f"tools: {', '.join(role.claude_tools)}\n"
         f"model: {role.claude_model}\n"
         + (f"effort: {role.claude_effort}\n" if role.claude_effort else "")
-        + (f"skills: {', '.join(role.claude_skills)}\n" if role.claude_skills else "")
+        + (f"skills: {', '.join(role.claude_skills)}\n" if role.claude_skills and preload_skills else "")
         + "---\n\n"
         + _banner(role)
         + role.body
@@ -316,9 +322,9 @@ def _json(data) -> str:
     return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
 
 
-def build_plugin_outputs(roles: List[Role], root: Path) -> Dict[Path, str]:
+def build_plugin_outputs(roles: List[Role], root: Path) -> Dict[Path, Output]:
     """The Claude Code plugin in plugin/ and the marketplace that lists it."""
-    outputs: Dict[Path, str] = {}
+    outputs: Dict[Path, Output] = {}
     table = render_team_table(roles)
     sub_agents = [r for r in roles if not r.main_agent]
     for role in roles:
@@ -326,10 +332,14 @@ def build_plugin_outputs(roles: List[Role], root: Path) -> Dict[Path, str]:
             body = render_plugin_command_body(role.body.replace(TEAM_TABLE_MARKER, table))
             outputs[PLUGIN_COMMAND_PATH] = render_claude_command(replace(role, body=body))
         else:
-            outputs[PLUGIN_AGENTS_DIR / f"{role.name}.md"] = render_claude_agent(role, scope=PLUGIN_SUBAGENT_SCOPE)
+            # No skills: frontmatter; Anthropic's directory accepts that key only from Verified organizations.
+            # The prompts work without the preload and can still load the skill with the Skill tool.
+            outputs[PLUGIN_AGENTS_DIR / f"{role.name}.md"] = render_claude_agent(
+                role, scope=PLUGIN_SUBAGENT_SCOPE, preload_skills=False
+            )
 
     description = (
-        f"An AI engineering team: /{PLUGIN_NAME}:orchestrate leads {len(sub_agents)} specialist sub-agents "
+        f"SEA (Software Engineering Agents), an AI engineering team: /{PLUGIN_NAME}:orchestrate leads {len(sub_agents)} specialist sub-agents "
         "through Plan, Setup and Build."
     )
     # No "version": a version pins installs until it is bumped, so without one installs follow the git commits
@@ -362,21 +372,27 @@ def build_plugin_outputs(roles: List[Role], root: Path) -> Dict[Path, str]:
         if not path.exists():
             raise ValueError(f"plugin file not found: {source.as_posix()}")
         outputs[target] = normalize_newlines(path.read_text(encoding="utf-8-sig"))
+    if not (root / PLUGIN_ICON_SOURCE).exists():
+        raise ValueError(f"plugin file not found: {PLUGIN_ICON_SOURCE.as_posix()}")
+    outputs[PLUGIN_ICON_PATH] = (root / PLUGIN_ICON_SOURCE).read_bytes()
     return outputs
 
 
-def build_all_outputs(roles: List[Role], root: Path) -> Dict[Path, str]:
+def build_all_outputs(roles: List[Role], root: Path) -> Dict[Path, Output]:
     return {**build_outputs(roles), **build_plugin_outputs(roles, root)}
 
 
-def write_outputs(outputs: Dict[Path, str], root: Path) -> None:
+def write_outputs(outputs: Dict[Path, Output], root: Path) -> None:
     for rel, content in outputs.items():
         path = root / rel
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content, encoding="utf-8", newline="\n")
+        if isinstance(content, bytes):
+            path.write_bytes(content)
+        else:
+            path.write_text(content, encoding="utf-8", newline="\n")
 
 
-def find_orphans(outputs: Dict[Path, str], root: Path) -> List[Path]:
+def find_orphans(outputs: Dict[Path, Output], root: Path) -> List[Path]:
     """Generated files on disk that no longer correspond to a role.
 
     A file only counts as generated when its banner names its own role, so a hand-written
@@ -410,15 +426,20 @@ def _read_text(path: Path) -> Optional[str]:
         return None
 
 
-def find_stale(outputs: Dict[Path, str], root: Path) -> List[Path]:
-    stale = [
-        rel for rel, content in outputs.items()
-        if not (root / rel).exists() or _read_text(root / rel) != content
-    ]
+def _is_current(path: Path, content: Output) -> bool:
+    if not path.exists():
+        return False
+    if isinstance(content, bytes):
+        return path.read_bytes() == content
+    return _read_text(path) == content
+
+
+def find_stale(outputs: Dict[Path, Output], root: Path) -> List[Path]:
+    stale = [rel for rel, content in outputs.items() if not _is_current(root / rel, content)]
     return sorted(stale + find_orphans(outputs, root))
 
 
-def remove_orphans(outputs: Dict[Path, str], root: Path) -> None:
+def remove_orphans(outputs: Dict[Path, Output], root: Path) -> None:
     for rel in find_orphans(outputs, root):
         path = root / rel
         path.unlink()

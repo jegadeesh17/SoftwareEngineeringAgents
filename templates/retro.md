@@ -1,6 +1,6 @@
 ---
 retro_format: 1
-sea_commit: <commit from ~/.se-agents/source.json, or unknown>
+sea_commit: <commit from ~/.sea/source.json, or unknown>
 runtime: <claude-code or antigravity>
 orchestrator_model: <the model you run on, for example opus>
 started: <YYYY-MM-DD>

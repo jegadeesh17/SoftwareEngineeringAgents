@@ -1,6 +1,6 @@
 {
-  "name": "se-agents",
-  "description": "An AI engineering team: /se-agents:orchestrate leads 11 specialist sub-agents through Plan, Setup and Build.",
+  "name": "sea",
+  "description": "SEA (Software Engineering Agents), an AI engineering team: /sea:orchestrate leads 11 specialist sub-agents through Plan, Setup and Build.",
   "author": {
     "name": "Jegadeesh D"
   },

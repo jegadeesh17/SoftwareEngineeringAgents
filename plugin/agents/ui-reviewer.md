@@ -1,10 +1,9 @@
 ---
 name: ui-reviewer
-description: "UiReviewer: Read-only reviewer that screenshots the running UI at desktop and mobile widths (a before baseline for existing projects, or a milestone review), applies Impeccable audit and critique, checks DESIGN.md and WCAG 2.2 AA, and returns APPROVED or REJECTED. Part of the /se-agents:orchestrate engineering team: use only when the orchestrator delegates to it."
+description: "UiReviewer: Read-only reviewer that screenshots the running UI at desktop and mobile widths (a before baseline for existing projects, or a milestone review), applies Impeccable audit and critique, checks DESIGN.md and WCAG 2.2 AA, and returns APPROVED or REJECTED. Part of the /sea:orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Glob, Grep, Bash, Skill
 model: sonnet
 effort: high
-skills: impeccable:impeccable
 ---
 
 <!-- GENERATED from agents/ui-reviewer.md — edit the source and run python -m engine.build_agents -->

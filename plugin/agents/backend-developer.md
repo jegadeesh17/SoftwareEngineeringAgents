@@ -1,6 +1,6 @@
 ---
 name: backend-developer
-description: "BackendDeveloper: Implements exactly one non-UI task (owner backend-developer) from docs/TASKS.json against the contracts in docs/ARCHITECTURE.md, writes and runs its tests and records the run in docs/QA_RESULTS.json, or fixes it using failure output or review findings. Part of the /se-agents:orchestrate engineering team: use only when the orchestrator delegates to it."
+description: "BackendDeveloper: Implements exactly one non-UI task (owner backend-developer) from docs/TASKS.json against the contracts in docs/ARCHITECTURE.md, writes and runs its tests and records the run in docs/QA_RESULTS.json, or fixes it using failure output or review findings. Part of the /sea:orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Write, Edit, Glob, Grep, Bash
 model: sonnet
 effort: high

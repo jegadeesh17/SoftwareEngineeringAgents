@@ -1,6 +1,6 @@
 ---
 name: qa-tester
-description: "QaTester: Once per milestone, writes the tests that per-task tests miss (uncovered acceptance criteria and cross-task wiring through real adapters), runs the full test command and records the exact command and exit code in docs/QA_RESULTS.json. Part of the /se-agents:orchestrate engineering team: use only when the orchestrator delegates to it."
+description: "QaTester: Once per milestone, writes the tests that per-task tests miss (uncovered acceptance criteria and cross-task wiring through real adapters), runs the full test command and records the exact command and exit code in docs/QA_RESULTS.json. Part of the /sea:orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Write, Edit, Glob, Grep, Bash
 model: haiku
 effort: high

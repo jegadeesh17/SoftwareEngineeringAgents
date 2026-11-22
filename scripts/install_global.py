@@ -1,15 +1,16 @@
 """
-Global Installer for SoftwareEngineeringAgents
+Global installer for SEA (Software Engineering Agents)
 Installs the generated agent team so it works in any project folder:
 1. Claude Code sub-agents   -> ~/.claude/agents/<role>.md
 2. Claude Code /orchestrate -> ~/.claude/commands/orchestrate.md
 3. Antigravity agents       -> ~/.gemini/config/agents/<role>/agent.md
-4. Team files              -> ~/.se-agents/: retro-template.md, doc-templates.md, usage.py,
+4. Team files              -> ~/.sea/: retro-template.md, doc-templates.md, usage.py,
                                plus source.json (this clone and commit)
 5. Antigravity global rule 'nomenclature-standards.md' (opt-in via --global-rules)
 
 Files this installer wrote before are updated. Files with your own changes are kept
-unless --force is passed. Nothing in your home directory is ever deleted.
+unless --force is passed. Nothing in your home directory is ever deleted; a ~/.se-agents/
+folder from before the SEA rename is renamed to ~/.sea/, with its retros.
 """
 
 import argparse
@@ -31,21 +32,40 @@ if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
 # Records what was installed, so a later run can tell our own files from the user's edits
-MANIFEST_PATH = Path(".se-agents") / "installed.json"
+MANIFEST_PATH = Path(".sea") / "installed.json"
 # Content hashes (LF-normalized) of files written by earlier installer versions; safe to replace
 LEGACY_HASHES = {
     ".claude/commands/orchestrate.md": {"95aa56d8ff3899f7c54a24cacc2e92791362e3269ee55e4b1143f2c3e6842baf"},
 }
 RULE_SOURCE = Path(".agents") / "rules" / "nomenclature-standards.md"
 RETRO_TEMPLATE_SOURCE = Path("templates") / "retro.md"
-RETRO_TEMPLATE_HOME = Path(".se-agents") / "retro-template.md"
-# Files the orchestrator reads or runs from ~/.se-agents/ while it works in a user's project
+RETRO_TEMPLATE_HOME = Path(".sea") / "retro-template.md"
+# Files the orchestrator reads or runs from ~/.sea/ while it works in a user's project
 TEAM_FILES = [
     (RETRO_TEMPLATE_SOURCE, RETRO_TEMPLATE_HOME),
-    (Path("templates") / "doc-templates.md", Path(".se-agents") / "doc-templates.md"),
-    (Path("engine") / "usage.py", Path(".se-agents") / "usage.py"),
+    (Path("templates") / "doc-templates.md", Path(".sea") / "doc-templates.md"),
+    (Path("engine") / "usage.py", Path(".sea") / "usage.py"),
 ]
-SOURCE_INFO_PATH = Path(".se-agents") / "source.json"
+SOURCE_INFO_PATH = Path(".sea") / "source.json"
+TEAM_DIR = Path(".sea")
+LEGACY_TEAM_DIR = Path(".se-agents")  # the team folder's name before the SEA rename
+
+
+def migrate_team_dir(home: Path) -> None:
+    """Rename ~/.se-agents to ~/.sea, and the install record's paths with it. Never merges or deletes."""
+    old, new = home / LEGACY_TEAM_DIR, home / TEAM_DIR
+    if not old.exists():
+        return
+    if new.exists():
+        print(f"      [!] Both {old} and {new} exist. Using {new}; move anything you need from {old} yourself.")
+        return
+    old.rename(new)
+    print(f"      [+] Renamed {old} to {new}")
+    old_prefix, new_prefix = LEGACY_TEAM_DIR.as_posix() + "/", TEAM_DIR.as_posix() + "/"
+    manifest = {(new_prefix + key[len(old_prefix):] if key.startswith(old_prefix) else key): digest
+                for key, digest in _load_manifest(home).items()}
+    if manifest:
+        _save_manifest(home, manifest)
 
 
 def _sha256(text: str) -> str:
@@ -140,7 +160,7 @@ def _home_path(generated: Path) -> Path:
 
 
 def main(argv: Optional[List[str]] = None, home: Optional[Path] = None, root: Optional[Path] = None) -> int:
-    parser = argparse.ArgumentParser(description="Install the SoftwareEngineeringAgents team globally")
+    parser = argparse.ArgumentParser(description="Install the SEA team globally")
     parser.add_argument("--force", action="store_true", help="overwrite files that have your own changes")
     parser.add_argument("--global-rules", action="store_true",
                         help="also install the always-on nomenclature rule for every Antigravity project")
@@ -150,7 +170,7 @@ def main(argv: Optional[List[str]] = None, home: Optional[Path] = None, root: Op
     user_home = home or Path.home()
 
     print("=" * 65)
-    print("  SOFTWARE ENGINEERING AGENTS: GLOBAL INSTALLER")
+    print("  SEA (SOFTWARE ENGINEERING AGENTS): GLOBAL INSTALLER")
     print("=" * 65)
 
     check = build_agents.main(["--check"], root=root)
@@ -161,6 +181,8 @@ def main(argv: Optional[List[str]] = None, home: Optional[Path] = None, root: Op
         print("\n[!] Nothing installed: generated agent files are out of date with agents/.")
         print("    Run: python -m engine.build_agents")
         return 1
+
+    migrate_team_dir(user_home)
 
     # Install from the generator's output, not the checkout's bytes, so files are always LF
     outputs = build_agents.build_outputs(build_agents.load_roles(root / build_agents.SOURCE_DIR))

@@ -1,6 +1,6 @@
 ---
 name: task-planner
-description: "TaskPlanner: Breaks the architecture into ordered, testable tasks with an owner across milestones (three for a new project, one to three for a change to an existing one) in docs/TASKS.json. Use after docs/ARCHITECTURE.md is frozen. Part of the /se-agents:orchestrate engineering team: use only when the orchestrator delegates to it."
+description: "TaskPlanner: Breaks the architecture into ordered, testable tasks with an owner across milestones (three for a new project, one to three for a change to an existing one) in docs/TASKS.json. Use after docs/ARCHITECTURE.md is frozen. Part of the /sea:orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Write, Edit, Glob, Grep
 model: opus
 effort: medium

@@ -150,7 +150,9 @@ def test_container_logins_are_not_flagged():
 
 
 def test_file_names_and_the_team_folder_are_not_flagged():
-    text = "Edited orchestrator.md, test_retros.py and package.json; could not write ~/.se-agents/retros; see github.com"
+    # Retros written before the rename name ~/.se-agents
+    text = ("Edited orchestrator.md, test_retros.py and package.json; could not write ~/.sea/retros "
+            "(earlier: ~/.se-agents/retros); see github.com")
 
     assert retros.privacy_findings(text, []) == []
 

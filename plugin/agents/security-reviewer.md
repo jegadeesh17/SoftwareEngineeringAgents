@@ -1,6 +1,6 @@
 ---
 name: security-reviewer
-description: "SecurityReviewer: Read-only security reviewer with two modes: design (reviews the architecture's security and data section) and milestone (audits changed code for authorization, injection, secrets and data exposure), and returns APPROVED or REJECTED. Part of the /se-agents:orchestrate engineering team: use only when the orchestrator delegates to it."
+description: "SecurityReviewer: Read-only security reviewer with two modes: design (reviews the architecture's security and data section) and milestone (audits changed code for authorization, injection, secrets and data exposure), and returns APPROVED or REJECTED. Part of the /sea:orchestrate engineering team: use only when the orchestrator delegates to it."
 tools: Read, Glob, Grep, Bash
 model: opus
 effort: medium
