@@ -239,6 +239,21 @@ def test_installer_renames_the_old_team_folder_with_its_retros(tmp_path, install
     assert "Renamed" in capsys.readouterr().out
 
 
+def test_installer_installs_nothing_when_the_old_team_folder_is_locked(tmp_path, installer, monkeypatch, capsys):
+    (tmp_path / ".se-agents").mkdir()
+
+    def locked(self, target):
+        raise PermissionError(13, "Access is denied")
+
+    monkeypatch.setattr(Path, "rename", locked)
+
+    assert installer.main([], home=tmp_path) == 1
+
+    assert not (tmp_path / ".sea").exists()
+    assert not (tmp_path / ".claude").exists()
+    assert "Nothing installed" in capsys.readouterr().out
+
+
 def test_installer_leaves_both_team_folders_when_both_exist(tmp_path, installer, capsys):
     assert installer.main([], home=tmp_path) == 0
     (tmp_path / ".se-agents").mkdir()

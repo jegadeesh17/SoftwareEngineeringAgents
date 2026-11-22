@@ -51,21 +51,31 @@ TEAM_DIR = Path(".sea")
 LEGACY_TEAM_DIR = Path(".se-agents")  # the team folder's name before the SEA rename
 
 
-def migrate_team_dir(home: Path) -> None:
-    """Rename ~/.se-agents to ~/.sea, and the install record's paths with it. Never merges or deletes."""
+def migrate_team_dir(home: Path) -> bool:
+    """Rename ~/.se-agents to ~/.sea, and the install record's paths with it. Never merges or deletes.
+
+    False when the rename failed, so the caller installs nothing rather than start a second team folder.
+    """
     old, new = home / LEGACY_TEAM_DIR, home / TEAM_DIR
     if not old.exists():
-        return
+        return True
     if new.exists():
         print(f"      [!] Both {old} and {new} exist. Using {new}; move anything you need from {old} yourself.")
-        return
-    old.rename(new)
+        return True
+    try:
+        old.rename(new)
+    except OSError as error:
+        print(f"\n[!] Nothing installed: could not rename {old} to {new} ({error.strerror or error}).")
+        print("    A program has a file or folder open inside it: close any editor tab, terminal or")
+        print("    Explorer window there, then run this installer again.")
+        return False
     print(f"      [+] Renamed {old} to {new}")
     old_prefix, new_prefix = LEGACY_TEAM_DIR.as_posix() + "/", TEAM_DIR.as_posix() + "/"
     manifest = {(new_prefix + key[len(old_prefix):] if key.startswith(old_prefix) else key): digest
                 for key, digest in _load_manifest(home).items()}
     if manifest:
         _save_manifest(home, manifest)
+    return True
 
 
 def _sha256(text: str) -> str:
@@ -182,7 +192,8 @@ def main(argv: Optional[List[str]] = None, home: Optional[Path] = None, root: Op
         print("    Run: python -m engine.build_agents")
         return 1
 
-    migrate_team_dir(user_home)
+    if not migrate_team_dir(user_home):
+        return 1
 
     # Install from the generator's output, not the checkout's bytes, so files are always LF
     outputs = build_agents.build_outputs(build_agents.load_roles(root / build_agents.SOURCE_DIR))
