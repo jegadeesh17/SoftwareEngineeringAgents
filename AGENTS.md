@@ -29,6 +29,7 @@ Start from evidence: run `/judge-retros` in Claude Code and pick a ranked proble
 2. Regenerate: `python -m engine.build_agents`
 3. Test: `python -m pytest -q`. This includes a drift check that fails if the generated files are stale.
 4. Commit the source and the generated files together.
+5. To release to plugin users, bump `PLUGIN_VERSION` in `engine/build_agents.py` (fix `1.0.1`, feature `1.1.0`, breaking change `2.0.0`) and regenerate. Until it changes, plugin installs and Anthropic's directory stay on the previous release.
 
 Requires Python 3.11+. Dev dependencies: `pip install -e ".[dev]"`.
 

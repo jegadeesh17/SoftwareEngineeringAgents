@@ -35,7 +35,7 @@ Pick **one** of the two ways below. They install the same team, so having both m
 /plugin install sea@sea
 ```
 
-Plugin names are prefixed, so the command is `/sea:orchestrate` and the agents are `sea:<role>`. The plugin follows this repository's commits. To get a newer version, run `claude plugin marketplace update sea`, then `claude plugin update sea@sea`, and restart Claude Code. Python 3.11+ is needed only if you run `/judge-retros` or the token usage report yourself.
+Plugin names are prefixed, so the command is `/sea:orchestrate` and the agents are `sea:<role>`. The plugin ships in numbered releases (`version` in its `plugin.json`). To get a newer release, run `claude plugin marketplace update sea`, then `claude plugin update sea@sea`, and restart Claude Code. Python 3.11+ is needed only if you run `/judge-retros` or the token usage report yourself.
 
 ### Installer (Claude Code and Antigravity)
 

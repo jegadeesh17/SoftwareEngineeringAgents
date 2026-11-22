@@ -1,4 +1,5 @@
 import json
+import re
 
 import pytest
 
@@ -661,7 +662,9 @@ def test_plugin_and_marketplace_are_generated(tmp_path):
     marketplace = json.loads((tmp_path / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
     assert manifest["name"] == "sea"
     assert manifest["displayName"] == "SEA: Software Engineering Agents"
-    assert "version" not in manifest  # a version would pin installs until someone bumps it
+    # Releases are deliberate: installs and the directory move only when the version is bumped
+    assert manifest["version"] == build_agents.PLUGIN_VERSION
+    assert re.fullmatch(r"\d+\.\d+\.\d+", manifest["version"])
     assert marketplace["name"] == "sea"
     assert marketplace["plugins"] == [dict(marketplace["plugins"][0], name="sea", source="./plugin")]
     assert (tmp_path / "plugin" / "commands" / "orchestrate.md").exists()

@@ -49,6 +49,9 @@ SUBAGENT_SCOPE = " Part of the /orchestrate engineering team: use only when the 
 PLUGIN_NAME = "sea"
 # Shown in place of the name; also keeps the directory listing distinct from short look-alike names
 PLUGIN_DISPLAY_NAME = "SEA: Software Engineering Agents"
+# Installs and the directory move to a new release only when this changes: bump it for every release
+# (fix 1.0.1, feature 1.1.0, breaking change 2.0.0); commits in between stay unreleased
+PLUGIN_VERSION = "1.0.0"
 MARKETPLACE_NAME = "sea"
 REPOSITORY_URL = "https://github.com/jegadeesh17/SoftwareEngineeringAgents"
 AUTHOR_NAME = "Jegadeesh D"
@@ -344,10 +347,10 @@ def build_plugin_outputs(roles: List[Role], root: Path) -> Dict[Path, Output]:
         f"SEA (Software Engineering Agents), an AI engineering team: /{PLUGIN_NAME}:orchestrate leads {len(sub_agents)} specialist sub-agents "
         "through Plan, Setup and Build."
     )
-    # No "version": a version pins installs until it is bumped, so without one installs follow the git commits
     outputs[PLUGIN_MANIFEST_PATH] = _json({
         "name": PLUGIN_NAME,
         "displayName": PLUGIN_DISPLAY_NAME,
+        "version": PLUGIN_VERSION,
         "description": description,
         "author": {"name": AUTHOR_NAME},
         "homepage": REPOSITORY_URL,
